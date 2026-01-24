@@ -162,34 +162,40 @@ window.onmousemove = (e) => {
 window.onmouseup = (e) => {
     if (isDraggingCanvas) { // Finished dragging
         isDraggingCanvas = false;
-        // After drag, if no selection happened, hide panel
-        if (selectedPixels.length === 0) { // If no selection was active, then hide
+        // If no selection was active, then hide side panel
+        if (selectedPixels.length === 0) {
             sidePanel.style.display = 'none';
         }
-        return; // Don't proceed to click/selection logic if it was a drag
+        return; // Don't proceed to click/selection logic if it was a pan drag
     }
 
     if (isSelectingPixels) { // Finished selecting
         isSelectingPixels = false;
         
         // Normalize selection rectangle (ensure positive width/height)
-        const rectX = Math.min(selectionStartX, selectionEndX);
-        const rectY = Math.min(selectionStartY, selectionEndY);
-        const rectWidth = Math.abs(selectionEndX - selectionStartX);
-        const rectHeight = Math.abs(selectionEndY - selectionStartY);
+        const normalizedStartX = Math.min(selectionStartX, selectionEndX);
+        const normalizedStartY = Math.min(selectionStartY, selectionEndY);
+        const normalizedEndX = Math.max(selectionStartX, selectionEndX);
+        const normalizedEndY = Math.max(selectionStartY, selectionEndY);
 
-        // Calculate selected pixels
+        const rectWidth = normalizedEndX - normalizedStartX;
+        const rectHeight = normalizedEndY - normalizedStartY;
+
         selectedPixels = [];
-        if (rectWidth >= GRID_SIZE || rectHeight >= GRID_SIZE) { // Only if a valid rectangle was drawn (at least one grid unit size)
-            for (let x = rectX; x < rectX + rectWidth; x += GRID_SIZE) {
-                for (let y = rectY; y < rectY + rectHeight; y += GRID_SIZE) {
-                    const existingPixel = pixels.find(p => p.x === x && p.y === y);
-                    if (!existingPixel) { // Only allow selecting unowned pixels
-                        selectedPixels.push({ x, y });
+        // Only if a valid rectangle was drawn (more than a single pixel)
+        if (rectWidth > 0 && rectHeight > 0) {
+            for (let x = normalizedStartX; x < normalizedEndX; x += GRID_SIZE) {
+                for (let y = normalizedStartY; y < normalizedEndY; y += GRID_SIZE) {
+                    // Ensure x, y are within WORLD_SIZE and only select unowned pixels
+                    if (x >= 0 && x < WORLD_SIZE && y >= 0 && y < WORLD_SIZE) {
+                        const existingPixel = pixels.find(p => p.x === x && p.y === y);
+                        if (!existingPixel) {
+                            selectedPixels.push({ x, y });
+                        }
                     }
                 }
             }
-        } else { // Single click in selection mode (if ctrl was pressed but no drag, or minimal drag)
+        } else { // Handle single click or very small drag as a single pixel selection
              const worldX = (e.clientX - offsetX) / scale;
              const worldY = (e.clientY - offsetY) / scale;
              if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
