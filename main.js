@@ -101,4 +101,15 @@ function updateMinimap() {
 }
 
 window.addEventListener('resize', draw);
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        scale = 0.5;
+        offsetX = window.innerWidth / 2 - (WORLD_SIZE * scale) / 2;
+        offsetY = window.innerHeight / 2 - (WORLD_SIZE * scale) / 2;
+        draw();
+    }
+});
+
 draw();
