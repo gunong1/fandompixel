@@ -15,6 +15,7 @@ let offsetY = window.innerHeight / 2 - (WORLD_SIZE * scale) / 2;
 let pixels = [];
 
 function draw() {
+    console.log('draw function called');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -52,10 +53,19 @@ function draw() {
 
 // Fetch initial pixels
 fetch('/api/pixels')
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(initialPixels => {
+        console.log('Fetched initial pixels:', initialPixels);
         pixels = initialPixels;
         draw();
+    })
+    .catch(e => {
+        console.error('Error fetching initial pixels:', e);
     });
 
 socket.on('pixel_update', (pixel) => {
