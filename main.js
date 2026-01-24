@@ -122,7 +122,7 @@ window.onmouseup = (e) => {
         return;
     }
     
-    // Ignore clicks inside the side panel
+    // Ignore clicks inside the side panel to allow interaction with form elements
     if (sidePanel.contains(e.target)) {
         return;
     }
@@ -130,8 +130,8 @@ window.onmouseup = (e) => {
     const worldX = (e.clientX - offsetX) / scale;
     const worldY = (e.clientY - offsetY) / scale;
 
-    // Check if the click was on the canvas and within the world boundaries
-    if (e.target === canvas && worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
+    // Check if the click was within the world boundaries
+    if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
         const gx = Math.floor(worldX / GRID_SIZE);
         const gy = Math.floor(worldY / GRID_SIZE);
         const clickedX = gx * GRID_SIZE;
@@ -143,7 +143,7 @@ window.onmouseup = (e) => {
         updateSidePanel(existingPixel);
         sidePanel.style.display = 'block';
     } else {
-        // Hide panel if clicked anywhere else
+        // Hide panel if clicked outside the world
         sidePanel.style.display = 'none';
         selectedPixel = null;
     }
