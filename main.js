@@ -12,6 +12,18 @@ const nicknameInput = document.getElementById('nickname-input');
 const idolSelect = document.getElementById('idol-select');
 const subscribeButton = document.getElementById('subscribe-button');
 
+const debugOverlay = document.getElementById('debug-overlay');
+function debugLog(message) {
+    if(debugOverlay) {
+        const p = document.createElement('p');
+        p.textContent = message;
+        debugOverlay.appendChild(p);
+        debugOverlay.scrollTop = debugOverlay.scrollHeight; // Scroll to bottom
+    }
+    console.log(message);
+}
+
+
 const socket = io();
 
 const WORLD_SIZE = 3162;
@@ -125,11 +137,18 @@ socket.on('pixel_update', (pixel) => {
 let lastMouseX, lastMouseY;
 
 canvas.onmousedown = (e) => {
+    debugLog(`--- MOUSE DOWN ---`);
+    debugLog(`e.ctrlKey: ${e.ctrlKey}`);
+    debugLog(`e.target: ${e.target.tagName} (id: ${e.target.id || 'none'})`);
+
     // If Ctrl key is pressed, start panning the canvas
     if (e.ctrlKey) {
         isDraggingCanvas = true;
+        isSelectingPixels = false; // Ensure selection mode is off
+        debugLog('Action: Starting Canvas Pan.');
     } else { // Normal left-click, start selection drag
         isSelectingPixels = true;
+        isDraggingCanvas = false; // Ensure dragging mode is off
         const worldX = (e.clientX - offsetX) / scale;
         const worldY = (e.clientY - offsetY) / scale;
         selectionStartX = Math.floor(worldX / GRID_SIZE) * GRID_SIZE;
@@ -138,6 +157,7 @@ canvas.onmousedown = (e) => {
         selectionEndY = selectionStartY;
         selectedPixels = []; // Clear previous selection
         sidePanel.style.display = 'none'; // Hide panel during selection
+        debugLog(`Action: Starting Pixel Selection. Start: (${selectionStartX}, ${selectionStartY})`);
     }
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
@@ -160,13 +180,26 @@ window.onmousemove = (e) => {
 };
 
 window.onmouseup = (e) => {
+    debugLog(`--- MOUSE UP ---`);
+    debugLog(`isDraggingCanvas: ${isDraggingCanvas}`);
+    debugLog(`isSelectingPixels: ${isSelectingPixels}`);
+    debugLog(`e.target: ${e.target.tagName} (id: ${e.target.id || 'none'})`);
+
     if (isDraggingCanvas) { // Finished dragging
         isDraggingCanvas = false;
-        // If no selection was active, then hide side panel
+        debugLog('Action: Finished Canvas Pan.');
+        // After drag, if no selection happened, hide panel
         if (selectedPixels.length === 0) {
             sidePanel.style.display = 'none';
+            debugLog('Action: Hiding side panel (no active selection after pan).');
         }
         return; // Don't proceed to click/selection logic if it was a pan drag
+    }
+
+    // Ignore clicks inside the side panel to allow interaction with form elements
+    if (sidePanel.contains(e.target)) {
+        debugLog(`Click inside side panel. Ignoring.`);
+        return;
     }
 
     if (isSelectingPixels) { // Finished selecting
@@ -181,9 +214,13 @@ window.onmouseup = (e) => {
         const rectWidth = normalizedEndX - normalizedStartX;
         const rectHeight = normalizedEndY - normalizedStartY;
 
+        debugLog(`Selection Rect World Coords: (${normalizedStartX},${normalizedStartY}) to (${normalizedEndX},${normalizedEndY})`);
+        debugLog(`Selection Rect Size (W x H): ${rectWidth} x ${rectHeight}`);
+
         selectedPixels = [];
-        // Only if a valid rectangle was drawn (more than a single pixel)
+        // If a valid rectangle was drawn (more than a single pixel)
         if (rectWidth > 0 && rectHeight > 0) {
+            debugLog('Type: Multi-pixel selection (dragged).');
             for (let x = normalizedStartX; x < normalizedEndX; x += GRID_SIZE) {
                 for (let y = normalizedStartY; y < normalizedEndY; y += GRID_SIZE) {
                     // Ensure x, y are within WORLD_SIZE and only select unowned pixels
@@ -196,7 +233,8 @@ window.onmouseup = (e) => {
                 }
             }
         } else { // Handle single click or very small drag as a single pixel selection
-             const worldX = (e.clientX - offsetX) / scale;
+            debugLog('Type: Single pixel selection (click or minimal drag, isSelectingPixels was true).');
+             const worldX = (e.clientX - offsetX) / scale; // Recalculate based on current mouse pos for click
              const worldY = (e.clientY - offsetY) / scale;
              if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
                  const gx = Math.floor(worldX / GRID_SIZE) * GRID_SIZE;
@@ -208,22 +246,67 @@ window.onmouseup = (e) => {
              }
         }
         
+        debugLog(`Selected Pixels Count: ${selectedPixels.length}`);
+        if (selectedPixels.length > 0) {
+            debugLog(`First selected pixel: X:${selectedPixels[0].x}, Y:${selectedPixels[0].y}`);
+        }
+
         updateSidePanel(); // Update panel based on selectedPixels
         if (selectedPixels.length > 0) {
             sidePanel.style.display = 'block';
+            debugLog('Action: Showing side panel.');
         } else {
             sidePanel.style.display = 'none';
+            debugLog('Action: Hiding side panel (no pixels selected).');
         }
         draw(); // Redraw with selected pixels highlighted
         return; // Don't proceed to regular click logic
     }
     
     // If not dragging and not selecting, then it's a regular click (possibly outside canvas)
-    // Clear selection if click outside canvas OR existing selection
-    if (e.target !== canvas || selectedPixels.length > 0) { // If click outside canvas OR selectedPixels not empty
+    // This part handles single clicks on owned pixels or clicks outside everything to clear selection
+    if (e.target === canvas) { // Clicked directly on canvas (not part of drag/selection)
+        const worldX = (e.clientX - offsetX) / scale;
+        const worldY = (e.clientY - offsetY) / scale;
+        debugLog(`Client Coords: (${e.clientX}, ${e.clientY})`);
+        debugLog(`Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
+        debugLog(`Scale: ${scale.toFixed(2)}`);
+        debugLog(`Calculated World Coords: (${worldX.toFixed(2)}, ${worldY.toFixed(2)})`);
+
+
+        if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
+            debugLog('Result: Click is INSIDE world boundaries (single click).');
+            const gx = Math.floor(worldX / GRID_SIZE);
+            const gy = Math.floor(worldY / GRID_SIZE);
+            const clickedX = gx * GRID_SIZE;
+            const clickedY = gy * GRID_SIZE;
+
+            selectedPixels = []; // Clear previous selection
+            const existingPixel = pixels.find(p => p.x === clickedX && p.y === clickedY);
+            
+            if (existingPixel) { // If single clicked an owned pixel, show its info
+                selectedPixels.push(existingPixel); // Temporarily add for panel display
+                updateSidePanel(existingPixel); // Pass the owned pixel to display its info
+                sidePanel.style.display = 'block';
+                debugLog(`Action: Showing info for owned pixel (${clickedX}, ${clickedY}).`);
+            } else { // If single clicked an unowned pixel, select it
+                selectedPixels.push({ x: clickedX, y: clickedY });
+                updateSidePanel(); // Update panel with the single selected unowned pixel
+                sidePanel.style.display = 'block';
+                debugLog(`Action: Selecting unowned pixel (${clickedX}, ${clickedY}).`);
+            }
+            draw();
+        } else { // Click on canvas but outside world boundaries
+            sidePanel.style.display = 'none';
+            selectedPixels = [];
+            draw();
+            debugLog('Action: Hiding side panel (canvas click outside world).');
+        }
+    } else if (!sidePanel.contains(e.target)) { // Clicked outside canvas AND outside side panel
         sidePanel.style.display = 'none';
         selectedPixels = [];
-        draw(); // Redraw to clear selection highlight
+        draw();
+        debugLog('Action: Hiding side panel (click outside canvas and sidepanel).');
     }
 };
 
