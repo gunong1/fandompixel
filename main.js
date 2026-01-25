@@ -12,15 +12,8 @@ const nicknameInput = document.getElementById('nickname-input');
 const idolSelect = document.getElementById('idol-select');
 const subscribeButton = document.getElementById('subscribe-button');
 
-const debugOverlay = document.getElementById('debug-overlay');
 function debugLog(message) {
-    if(debugOverlay) {
-        const p = document.createElement('p');
-        p.textContent = message;
-        debugOverlay.appendChild(p);
-        debugOverlay.scrollTop = debugOverlay.scrollHeight; // Scroll to bottom
-    }
-    console.log(message);
+    // No operation - debug logging is disabled
 }
 
 
@@ -109,10 +102,6 @@ function draw() {
         });
 
         // Draw the bounding box
-        debugLog(`--- DEBUG in draw() for bounding box ---`);
-        debugLog(`Bounding Box (minX,minY): (${minX},${minY})`);
-        debugLog(`Bounding Box (maxX,maxY): (${maxX},${maxY})`);
-        debugLog(`Bounding Box (width,height): (${maxX - minX},${maxY - minY})`);
         ctx.strokeStyle = 'yellow';
         ctx.lineWidth = 2; // Fixed to 2 for consistent visibility
         ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
@@ -153,15 +142,11 @@ socket.on('pixel_update', (pixel) => {
 let lastMouseX, lastMouseY;
 
 canvas.onmousedown = (e) => {
-    debugLog(`--- MOUSE DOWN ---`);
-    debugLog(`e.ctrlKey: ${e.ctrlKey}`);
-    debugLog(`e.target: ${e.target.tagName} (id: ${e.target.id || 'none'})`);
 
     // If Ctrl key is pressed, start panning the canvas
     if (e.ctrlKey) {
         isDraggingCanvas = true;
         isSelectingPixels = false; // Ensure selection mode is off
-        debugLog('Action: Starting Canvas Pan.');
     } else { // Normal left-click, start selection drag
         isSelectingPixels = true;
         isDraggingCanvas = false; // Ensure dragging mode is off
@@ -173,7 +158,6 @@ canvas.onmousedown = (e) => {
         selectionEndY = selectionStartY;
         selectedPixels = []; // Clear previous selection
         sidePanel.style.display = 'none'; // Hide panel during selection
-        debugLog(`Action: Starting Pixel Selection. Start: (${selectionStartX}, ${selectionStartY})`);
     }
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
@@ -196,25 +180,18 @@ window.onmousemove = (e) => {
 };
 
 window.onmouseup = (e) => {
-    debugLog(`--- MOUSE UP ---`);
-    debugLog(`isDraggingCanvas: ${isDraggingCanvas}`);
-    debugLog(`isSelectingPixels: ${isSelectingPixels}`);
-    debugLog(`e.target: ${e.target.tagName} (id: ${e.target.id || 'none'})`);
 
     if (isDraggingCanvas) { // Finished dragging
         isDraggingCanvas = false;
-        debugLog('Action: Finished Canvas Pan.');
         // After drag, if no selection happened, hide panel
         if (selectedPixels.length === 0) {
             sidePanel.style.display = 'none';
-            debugLog('Action: Hiding side panel (no active selection after pan).');
         }
         return; // Don't proceed to click/selection logic if it was a pan drag
     }
 
     // Ignore clicks inside the side panel to allow interaction with form elements
     if (sidePanel.contains(e.target)) {
-        debugLog(`Click inside side panel. Ignoring.`);
         return;
     }
 
@@ -230,13 +207,12 @@ window.onmouseup = (e) => {
         const rectWidth = normalizedEndX - normalizedStartX;
         const rectHeight = normalizedEndY - normalizedStartY;
 
-        debugLog(`Selection Rect World Coords: (${normalizedStartX},${normalizedStartY}) to (${normalizedEndX},${normalizedEndY})`);
-        debugLog(`Selection Rect Size (W x H): ${rectWidth} x ${rectHeight}`);
+        const rectWidth = normalizedEndX - normalizedStartX;
+        const rectHeight = normalizedEndY - normalizedStartY;
 
         selectedPixels = [];
         // If a valid rectangle was drawn (more than a single pixel)
         if (rectWidth > 0 && rectHeight > 0) {
-            debugLog('Type: Multi-pixel selection (dragged).');
             for (let x = normalizedStartX; x < normalizedEndX; x += GRID_SIZE) {
                 for (let y = normalizedStartY; y < normalizedEndY; y += GRID_SIZE) {
                     // Ensure x, y are within WORLD_SIZE and only select pixels
@@ -246,7 +222,6 @@ window.onmouseup = (e) => {
                 }
             }
         } else { // Handle single click or very small drag as a single pixel selection
-            debugLog('Type: Single pixel selection (click or minimal drag, isSelectingPixels was true).');
              const worldX = (e.clientX - offsetX) / scale; // Recalculate based on current mouse pos for click
              const worldY = (e.clientY - offsetY) / scale;
              if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
@@ -256,25 +231,13 @@ window.onmouseup = (e) => {
              }
         }
         
-        debugLog(`Selected Pixels Count: ${selectedPixels.length}`);
-        if (selectedPixels.length > 0) {
-            debugLog(`First selected pixel: X:${selectedPixels[0].x}, Y:${selectedPixels[0].y}`);
-        }
 
-        debugLog(`--- DEBUG before draw() in onmouseup ---`);
-        debugLog(`Final selectedPixels.length: ${selectedPixels.length}`);
-        if (selectedPixels.length > 0) {
-            debugLog(`First selected pixel (x,y): (${selectedPixels[0].x}, ${selectedPixels[0].y})`);
-            debugLog(`Last selected pixel (x,y): (${selectedPixels[selectedPixels.length - 1].x}, ${selectedPixels[selectedPixels.length - 1].y})`);
-        }
 
         updateSidePanel(); // Update panel based on selectedPixels
         if (selectedPixels.length > 0) {
             sidePanel.style.display = 'block';
-            debugLog('Action: Showing side panel.');
         } else {
             sidePanel.style.display = 'none';
-            debugLog('Action: Hiding side panel (no pixels selected).');
         }
         draw(); // Redraw with selected pixels highlighted
         return; // Don't proceed to regular click logic
@@ -285,14 +248,8 @@ window.onmouseup = (e) => {
     if (e.target === canvas) { // Clicked directly on canvas (not part of drag/selection)
         const worldX = (e.clientX - offsetX) / scale;
         const worldY = (e.clientY - offsetY) / scale;
-        debugLog(`Client Coords: (${e.clientX}, ${e.clientY})`);
-        debugLog(`Offset: (${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
-        debugLog(`Scale: ${scale.toFixed(2)}`);
-        debugLog(`Calculated World Coords: (${worldX.toFixed(2)}, ${worldY.toFixed(2)})`);
-
 
         if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
-            debugLog('Result: Click is INSIDE world boundaries (single click).');
             const gx = Math.floor(worldX / GRID_SIZE);
             const gy = Math.floor(worldY / GRID_SIZE);
             const clickedX = gx * GRID_SIZE;
@@ -305,25 +262,21 @@ window.onmouseup = (e) => {
                 selectedPixels.push(existingPixel); // Temporarily add for panel display
                 updateSidePanel(existingPixel); // Pass the owned pixel to display its info
                 sidePanel.style.display = 'block';
-                debugLog(`Action: Showing info for owned pixel (${clickedX}, ${clickedY}).`);
             } else { // If single clicked an unowned pixel, select it
                 selectedPixels.push({ x: clickedX, y: clickedY });
                 updateSidePanel(); // Update panel with the single selected unowned pixel
                 sidePanel.style.display = 'block';
-                debugLog(`Action: Selecting unowned pixel (${clickedX}, ${clickedY}).`);
             }
             draw();
         } else { // Click on canvas but outside world boundaries
             sidePanel.style.display = 'none';
             selectedPixels = [];
             draw();
-            debugLog('Action: Hiding side panel (canvas click outside world).');
         }
     } else if (!sidePanel.contains(e.target)) { // Clicked outside canvas AND outside side panel
         sidePanel.style.display = 'none';
         selectedPixels = [];
         draw();
-        debugLog('Action: Hiding side panel (click outside canvas and sidepanel).');
     }
 };
 
@@ -368,8 +321,6 @@ function updateSidePanel(singleOwnedPixel = null) {
                 statusTag.style.background = '#00d4ff'; // Blue for all unowned
             }
             areaIdText.innerText = `총 구독료: ₩ ${(unownedInSelection.length * 1000).toLocaleString()}`;
-            debugLog(`Side Panel Status Tag: ${statusTag.textContent}`);
-            debugLog(`Side Panel Area ID Text: ${areaIdText.innerText}`);
         } else if (ownedInSelection.length > 0) { // All selected pixels are owned
             pixelInfo.style.display = 'block';
             statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
@@ -377,21 +328,17 @@ function updateSidePanel(singleOwnedPixel = null) {
             ownerNickname.textContent = '-';
             idolGroup.textContent = '-';
             areaIdText.innerText = `총 ${totalSelected}개의 소유된 픽셀`;
-            debugLog(`Side Panel Status Tag: ${statusTag.textContent}`);
-            debugLog(`Side Panel Area ID Text: ${areaIdText.innerText}`);
             
             // If it's a single owned pixel from a direct click, show its specific info
             if (ownedInSelection.length === 1 && singleOwnedPixel && ownedInSelection[0].x === singleOwnedPixel.x && ownedInSelection[0].y === singleOwnedPixel.y) {
                 ownerNickname.textContent = singleOwnedPixel.owner_nickname;
                 idolGroup.textContent = singleOwnedPixel.idol_group_name;
                 areaIdText.innerText = `Area #${singleOwnedPixel.x/GRID_SIZE}-${singleOwnedPixel.y/GRID_SIZE}`;
-                debugLog(`Side Panel Area ID Text (single owned): ${areaIdText.innerText}`);
             }
         }
     } else { // No pixels selected
         sidePanel.style.display = 'none';
         areaIdText.innerText = `Area #??`; // Default state
-        debugLog(`Side Panel: Hidden (No pixels selected)`);
     }
 }
 
