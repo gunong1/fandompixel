@@ -154,9 +154,9 @@ canvas.onmousedown = (e) => {
         selectionStartX = Math.floor(worldX / GRID_SIZE) * GRID_SIZE;
         selectionStartY = Math.floor(worldY / GRID_SIZE) * GRID_SIZE;
 
-        // 클램핑: 캔버스 경계를 벗어나지 않도록
-        selectionStartX = Math.max(0, Math.min(selectionStartX, WORLD_SIZE));
-        selectionStartY = Math.max(0, Math.min(selectionStartY, WORLD_SIZE));
+        // 클램핑: 캔버스 경계를 벗어나지 않도록 (0 이상, WORLD_SIZE 미만으로)
+        selectionStartX = Math.max(0, Math.min(selectionStartX, WORLD_SIZE - GRID_SIZE));
+        selectionStartY = Math.max(0, Math.min(selectionStartY, WORLD_SIZE - GRID_SIZE));
 
         // Add clamping
         selectionStartX = Math.max(0, Math.min(selectionStartX, WORLD_SIZE - GRID_SIZE));
