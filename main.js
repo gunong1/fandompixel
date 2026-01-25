@@ -83,28 +83,39 @@ function draw() {
     });
 
     // Draw selection rectangle if currently selecting
-    if (isSelectingPixels && selectionStartX !== selectionEndX && selectionStartY !== selectionEndY) {
+    if (isSelectingPixels && (selectionStartX !== selectionEndX || selectionStartY !== selectionEndY)) {
         ctx.strokeStyle = 'lime';
         ctx.lineWidth = 2 / scale;
 
-        // Calculate half the line width in world coordinates
-        const halfStroke = (ctx.lineWidth / 2);
+        const startX = Math.min(selectionStartX, selectionEndX);
+        const startY = Math.min(selectionStartY, selectionEndY);
+        
+        // Calculate the raw width and height of the selection area based on pixel grid.
+        // selectionEndX/Y are the top-left corners of the grid cells.
+        // So, to get the full extent, we add GRID_SIZE to the larger coordinate.
+        const rawEndX = Math.max(selectionStartX, selectionEndX) + GRID_SIZE;
+        const rawEndY = Math.max(selectionStartY, selectionEndY) + GRID_SIZE;
 
-        // Adjust the drawing rectangle to be strictly within WORLD_SIZE
-        // Apply Math.max(0, ...) for start to prevent negative values
-        // Apply Math.min(WORLD_SIZE, ...) for end to prevent exceeding WORLD_SIZE
-        const drawStartX = Math.max(0, selectionStartX + halfStroke);
-        const drawStartY = Math.max(0, selectionStartY + halfStroke);
-        const drawEndX = Math.min(WORLD_SIZE, selectionEndX - halfStroke);
-        const drawEndY = Math.min(WORLD_SIZE, selectionEndY - halfStroke);
+        // Clamp the raw end coordinates to WORLD_SIZE
+        const clampedEndX = Math.min(WORLD_SIZE, rawEndX);
+        const clampedEndY = Math.min(WORLD_SIZE, rawEndY);
 
-        const drawWidth = drawEndX - drawStartX;
-        const drawHeight = drawEndY - drawStartY;
+        const width = clampedEndX - startX;
+        const height = clampedEndY - startY;
 
-        if (drawWidth > 0 && drawHeight > 0) { // Only draw if valid dimensions
-            ctx.strokeRect(drawStartX, drawStartY, drawWidth, drawHeight);
+        // Adjust for stroke width to keep it entirely within the bounds
+        const halfStroke = ctx.lineWidth / 2;
+
+        const drawX = startX + halfStroke;
+        const drawY = startY + halfStroke;
+        const drawWidthAdjusted = width - ctx.lineWidth;
+        const drawHeightAdjusted = height - ctx.lineWidth;
+
+        // Only draw if the adjusted dimensions are positive
+        if (drawWidthAdjusted > 0 && drawHeightAdjusted > 0) {
+            ctx.strokeRect(drawX, drawY, drawWidthAdjusted, drawHeightAdjusted);
             ctx.fillStyle = 'rgba(0, 255, 0, 0.1)';
-            ctx.fillRect(drawStartX, drawStartY, drawWidth, drawHeight);
+            ctx.fillRect(drawX, drawY, drawWidthAdjusted, drawHeightAdjusted);
         }
     }
     // Draw visual indicator for selected pixels (after selection is finalized)
