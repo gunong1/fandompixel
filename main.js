@@ -426,7 +426,12 @@ function updateSidePanel(singleOwnedPixel = null) {
     console.log('updateSidePanel called.'); // DEBUG
     console.log('Current selectedPixels length:', selectedPixels.length); // DEBUG
     console.log('selectedPixelCountDiv inside updateSidePanel:', selectedPixelCountDiv); // DEBUG
-    const totalSelected = selectedPixels.length;
+
+    // --- Implement Request 1: Data Filtering for selectedPixels ---
+    const validSelectedPixels = selectedPixels.filter(p => 
+        p.x >= 0 && p.x < WORLD_SIZE && p.y >= 0 && p.y < WORLD_SIZE
+    );
+    const totalSelected = validSelectedPixels.length;
     
     // Default to hide all purchase related things
     pixelInfo.style.display = 'none';
@@ -435,8 +440,8 @@ function updateSidePanel(singleOwnedPixel = null) {
     if (totalSelected > 0) {
         selectedPixelCountDiv.textContent = `총 ${totalSelected} 픽셀 선택됨`;
         selectedPixelCountDiv.style.display = 'block';
-        const ownedInSelection = selectedPixels.filter(p => pixels.some(ep => ep.x === p.x && ep.y === p.y));
-        const unownedInSelection = selectedPixels.filter(p => !pixels.some(ep => ep.x === p.x && ep.y === p.y));
+        const ownedInSelection = validSelectedPixels.filter(p => pixels.some(ep => ep.x === p.x && ep.y === p.y));
+        const unownedInSelection = validSelectedPixels.filter(p => !pixels.some(ep => ep.x === p.x && ep.y === p.y));
 
         if (unownedInSelection.length > 0) { // There are unowned pixels in the selection
             purchaseForm.style.display = 'block';
@@ -484,9 +489,19 @@ subscribeButton.onclick = () => {
         return;
     }
 
+    // --- Implement Request 1: Data Filtering for selectedPixels before sending to server ---
+    const pixelsToSend = selectedPixels.filter(p => 
+        p.x >= 0 && p.x < WORLD_SIZE && p.y >= 0 && p.y < WORLD_SIZE
+    );
+
+    if (pixelsToSend.length === 0) {
+        alert('유효한 픽셀이 선택되지 않았습니다. 캔버스 범위 내의 픽셀을 선택해주세요.');
+        return;
+    }
+
     const groupInfo = idolInfo[idolGroupName];
 
-    selectedPixels.forEach(pixel => {
+    pixelsToSend.forEach(pixel => {
         socket.emit('new_pixel', {
             x: pixel.x,
             y: pixel.y,
