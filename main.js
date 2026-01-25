@@ -223,12 +223,9 @@ window.onmouseup = (e) => {
             debugLog('Type: Multi-pixel selection (dragged).');
             for (let x = normalizedStartX; x < normalizedEndX; x += GRID_SIZE) {
                 for (let y = normalizedStartY; y < normalizedEndY; y += GRID_SIZE) {
-                    // Ensure x, y are within WORLD_SIZE and only select unowned pixels
+                    // Ensure x, y are within WORLD_SIZE and only select pixels
                     if (x >= 0 && x < WORLD_SIZE && y >= 0 && y < WORLD_SIZE) {
-                        const existingPixel = pixels.find(p => p.x === x && p.y === y);
-                        if (!existingPixel) {
-                            selectedPixels.push({ x, y });
-                        }
+                        selectedPixels.push({ x, y });
                     }
                 }
             }
@@ -239,10 +236,7 @@ window.onmouseup = (e) => {
              if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
                  const gx = Math.floor(worldX / GRID_SIZE) * GRID_SIZE;
                  const gy = Math.floor(worldY / GRID_SIZE) * GRID_SIZE;
-                 const existingPixel = pixels.find(p => p.x === gx && p.y === gy);
-                 if (!existingPixel) { // Only select unowned single pixel
-                    selectedPixels.push({ x: gx, y: gy });
-                 }
+                 selectedPixels.push({ x: gx, y: gy });
              }
         }
         
@@ -376,41 +370,37 @@ function updateSidePanel(singleOwnedPixel = null) {
     pixelInfo.style.display = 'none';
     purchaseForm.style.display = 'none';
 
-    if (totalSelected > 0) { // Pixels selected for purchase
-        // Check if all selected pixels are owned. If so, display info about first one.
-        const allOwned = selectedPixels.every(p => pixels.some(ep => ep.x === p.x && ep.y === p.y));
-        if (allOwned && selectedPixels.length === 1 && singleOwnedPixel) {
-            // It's a single owned pixel clicked, display its info
-            pixelInfo.style.display = 'block';
-            statusTag.textContent = '소유자 있음';
-            statusTag.style.background = '#ff4d4d';
-            ownerNickname.textContent = singleOwnedPixel.owner_nickname;
-            idolGroup.textContent = singleOwnedPixel.idol_group_name;
-            areaIdText.innerText = `Area #${singleOwnedPixel.x/GRID_SIZE}-${singleOwnedPixel.y/GRID_SIZE}`; // Display area info for single owned
-        } else if (allOwned) {
-            // If multiple selected and all are owned, display generic message
+    if (totalSelected > 0) {
+        const ownedInSelection = selectedPixels.filter(p => pixels.some(ep => ep.x === p.x && ep.y === p.y));
+        const unownedInSelection = selectedPixels.filter(p => !pixels.some(ep => ep.x === p.x && ep.y === p.y));
+
+        if (unownedInSelection.length > 0) { // There are unowned pixels in the selection
+            purchaseForm.style.display = 'block';
+            if (ownedInSelection.length > 0) {
+                statusTag.textContent = `${unownedInSelection.length} 픽셀 구매 가능 (${ownedInSelection.length}개 소유됨)`;
+                statusTag.style.background = '#ff9800'; // Orange for mixed
+            } else {
+                statusTag.textContent = `${totalSelected} 픽셀 선택됨`;
+                statusTag.style.background = '#00d4ff'; // Blue for all unowned
+            }
+            areaIdText.innerText = `총 구독료: ₩ ${(unownedInSelection.length * 1000).toLocaleString()}`;
+        } else if (ownedInSelection.length > 0) { // All selected pixels are owned
             pixelInfo.style.display = 'block';
             statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
-            statusTag.style.background = '#ff4d4d';
+            statusTag.style.background = '#ff4d4d'; // Red for all owned
             ownerNickname.textContent = '-';
             idolGroup.textContent = '-';
             areaIdText.innerText = `총 ${totalSelected}개의 소유된 픽셀`;
-        }
-        else { // Some or all are available for purchase
-            purchaseForm.style.display = 'block';
-            statusTag.textContent = `${totalSelected} 픽셀 선택됨`;
-            statusTag.style.background = '#00d4ff';
-            areaIdText.innerText = `총 구독료: ₩ ${(totalSelected * 1000).toLocaleString()}`;
             
-            // Reset nickname/idol inputs for fresh purchase
-            // nicknameInput.value = ''; // Keep previous nickname
-            // idolSelect.value = 'BTS'; // Keep previous idol
+            // If it's a single owned pixel from a direct click, show its specific info
+            if (ownedInSelection.length === 1 && singleOwnedPixel && ownedInSelection[0].x === singleOwnedPixel.x && ownedInSelection[0].y === singleOwnedPixel.y) {
+                ownerNickname.textContent = singleOwnedPixel.owner_nickname;
+                idolGroup.textContent = singleOwnedPixel.idol_group_name;
+                areaIdText.innerText = `Area #${singleOwnedPixel.x/GRID_SIZE}-${singleOwnedPixel.y/GRID_SIZE}`;
+            }
         }
-    } else { // No pixels selected or available single pixel
+    } else { // No pixels selected
         sidePanel.style.display = 'none';
-    }
-    // Update areaIdText to reflect current selection or default
-    if (selectedPixels.length === 0 && !singleOwnedPixel) {
         areaIdText.innerText = `Area #??`; // Default state
     }
 }
