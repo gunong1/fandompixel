@@ -6,6 +6,7 @@ const areaIdText = document.getElementById('area-id');
 const pixelInfo = document.getElementById('pixel-info');
 const statusTag = document.getElementById('status-tag');
 const selectedPixelCountDiv = document.getElementById('selected-pixel-count'); // New: Element for displaying selected pixel count
+console.log('selectedPixelCountDiv element:', selectedPixelCountDiv); // DEBUG
 const ownerNickname = document.getElementById('owner-nickname');
 const idolGroup = document.getElementById('idol-group');
 const purchaseForm = document.getElementById('purchase-form');
@@ -228,24 +229,45 @@ window.onmouseup = (e) => {
         const normalizedEndX = Math.max(selectionStartX, mouseUpPixelStartX);
         const normalizedEndY = Math.max(selectionStartY, mouseUpPixelStartY);
 
-        // The rectWidth and rectHeight should reflect the inclusive range.
-        // So, from normalizedStartX to normalizedEndX (inclusive) means (normalizedEndX - normalizedStartX + GRID_SIZE)
-        const rectWidth = normalizedEndX - normalizedStartX + GRID_SIZE; // Inclusive width
-        const rectHeight = normalizedEndY - normalizedStartY + GRID_SIZE; // Inclusive height
+                // The rectWidth and rectHeight calculations should reflect the exclusive upper bound for the loop.
 
-        selectedPixels = [];
-        // If a valid rectangle was drawn (more than a single pixel)
-        if (rectWidth > 0 && rectHeight > 0) {
-            // Loop from normalizedStartX up to and *including* normalizedEndX
-            for (let x = normalizedStartX; x <= normalizedEndX; x += GRID_SIZE) { // <--- Changed condition
-                for (let y = normalizedStartY; y <= normalizedEndY; y += GRID_SIZE) { // <--- Changed condition
-                    // Ensure x, y are within WORLD_SIZE and only select pixels
-                    if (x >= 0 && x < WORLD_SIZE && y >= 0 && y < WORLD_SIZE) {
-                        selectedPixels.push({ x, y });
+                // The difference between normalizedEndX and normalizedStartX (and Y) already covers the extent of the pixels.
+
+                // So, if normalizedEndX is the start of the last pixel, the loop should go up to (but not including) normalizedEndX + GRID_SIZE.
+
+                const effectiveRectEndX = normalizedEndX + GRID_SIZE;
+
+                const effectiveRectEndY = normalizedEndY + GRID_SIZE;
+
+        
+
+                selectedPixels = [];
+
+                // If a valid rectangle was drawn (more than a single pixel)
+
+                if (effectiveRectEndX > normalizedStartX && effectiveRectEndY > normalizedStartY) {
+
+                    // Loop from normalizedStartX up to (but not including) effectiveRectEndX
+
+                    for (let x = normalizedStartX; x < effectiveRectEndX; x += GRID_SIZE) { // <--- Changed condition
+
+                        for (let y = normalizedStartY; y < effectiveRectEndY; y += GRID_SIZE) { // <--- Changed condition
+
+                            // Ensure x, y are within WORLD_SIZE and only select pixels
+
+                            if (x >= 0 && x < WORLD_SIZE && y >= 0 && y < WORLD_SIZE) {
+
+                                selectedPixels.push({ x, y });
+
+                            }
+
+                        }
+
                     }
+
                 }
-            }
-        } else { // Handle single click or very small drag as a single pixel selection
+
+         else { // Handle single click or very small drag as a single pixel selection
              const worldX = (e.clientX - offsetX) / scale; // Recalculate based on current mouse pos for click
              const worldY = (e.clientY - offsetY) / scale;
              if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
@@ -325,6 +347,9 @@ function getPixelsInSelection(rectX, rectY, rectWidth, rectHeight) {
 
 // Modified updateSidePanel to handle multiple selections
 function updateSidePanel(singleOwnedPixel = null) {
+    console.log('updateSidePanel called.'); // DEBUG
+    console.log('Current selectedPixels length:', selectedPixels.length); // DEBUG
+    console.log('selectedPixelCountDiv inside updateSidePanel:', selectedPixelCountDiv); // DEBUG
     const totalSelected = selectedPixels.length;
     
     // Default to hide all purchase related things
