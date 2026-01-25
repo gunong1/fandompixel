@@ -288,7 +288,7 @@ window.onmouseup = (e) => {
         currentMouseWorldX = Math.max(0, Math.min(currentMouseWorldX, WORLD_SIZE));
         currentMouseWorldY = Math.max(0, Math.min(currentMouseWorldY, WORLD_SIZE));
 
-        // Apply Math.floor to snap to integer world coordinate as per Request 3
+        // Apply Math.floor to snap to integer world coordinate
         currentMouseWorldX = Math.floor(currentMouseWorldX);
         currentMouseWorldY = Math.floor(currentMouseWorldY);
 
@@ -296,7 +296,7 @@ window.onmouseup = (e) => {
         let mouseUpPixelStartX = Math.floor(currentMouseWorldX / GRID_SIZE) * GRID_SIZE;
         let mouseUpPixelStartY = Math.floor(currentMouseWorldY / GRID_SIZE) * GRID_SIZE;
 
-        // 클램핑: 캔버스 경계를 벗어나지 않도록
+        // 클램핑: 캔버스 경계를 벗어나지 않도록 (0 이상, MAX_GRID_START_COORD로)
         mouseUpPixelStartX = Math.max(0, Math.min(mouseUpPixelStartX, MAX_GRID_START_COORD));
         mouseUpPixelStartY = Math.max(0, Math.min(mouseUpPixelStartY, MAX_GRID_START_COORD));
 
@@ -308,31 +308,47 @@ window.onmouseup = (e) => {
         const normalizedEndX = Math.max(selectionStartX, mouseUpPixelStartX);
         const normalizedEndY = Math.max(selectionStartY, mouseUpPixelStartY);
 
-        const effectiveRectEndX = Math.min(WORLD_SIZE, normalizedEndX + GRID_SIZE);
-        const effectiveRectEndY = Math.min(WORLD_SIZE, normalizedEndY + GRID_SIZE);
-        
-        // --- Implement Request 1: Data Scrubbing - Two-step process ---
-        let rawSelectionCandidates = [];
+        // Derive selectionBox coordinates from normalized values.
+        // selectionBox.x/y are top-left of the selected region.
+        // selectionBox.width/height are the dimensions of the selected region.
+        // Note: normalizedEndX/Y are the start coords of the furthest pixel, so add GRID_SIZE for width/height.
+        const selectionBoxX = normalizedStartX;
+        const selectionBoxY = normalizedStartY;
+        const selectionBoxWidth = (normalizedEndX - normalizedStartX) + GRID_SIZE;
+        const selectionBoxHeight = (normalizedEndY - normalizedStartY) + GRID_SIZE;
 
-        // If a valid rectangle was drawn (more than a single pixel)
-        if (effectiveRectEndX > normalizedStartX && effectiveRectEndY > normalizedStartY) {
-            for (let y = normalizedStartY; y < effectiveRectEndY; y += GRID_SIZE) { // iterate in GRID_SIZE steps
-                for (let x = normalizedStartX; x < effectiveRectEndX; x += GRID_SIZE) { // iterate in GRID_SIZE steps
-                    rawSelectionCandidates.push({ x, y });
-                }
+        // --- Start of User's Provided Intersection Method Logic ---
+
+        // [1] 드래그한 사각형의 좌표 (Raw Input)
+        // 소수점 버림(floor) 처리로 정수 좌표 확보
+        let rawStartX = Math.floor(selectionBoxX);
+        let rawEndX = Math.floor(selectionBoxX + selectionBoxWidth);
+        let rawStartY = Math.floor(selectionBoxY);
+        let rawEndY = Math.floor(selectionBoxY + selectionBoxHeight);
+
+        // [2] 반복문의 범위를 캔버스 안쪽으로 강제 가두기 (핵심 로직!)
+        // Math.max(0, ...) : 0보다 작은 곳(왼쪽/위쪽 바깥)은 0으로 끌어올림
+        // Math.min(WORLD_SIZE, ...) : 끝(WORLD_SIZE)을 넘는 곳은 WORLD_SIZE로 끌어내림 (배타적 상한)
+        const loopStartX = Math.max(0, rawStartX);
+        const loopEndX = Math.min(WORLD_SIZE, rawEndX);
+        const loopStartY = Math.max(0, rawStartY);
+        const loopEndY = Math.min(WORLD_SIZE, rawEndY);
+
+        const validPixels = [];
+
+        // [3] 보정된 범위(Intersection) 내에서만 반복문 실행
+        // Iterate by GRID_SIZE
+        for (let y = loopStartY; y < loopEndY; y += GRID_SIZE) {
+            for (let x = loopStartX; x < loopEndX; x += GRID_SIZE) {
+                // 이 안에는 무조건 유효한 좌표만 들어옴
+                validPixels.push({ x, y });
             }
-        } else { // Handle single click or very small drag as a single pixel selection
-            // Use currentMouseWorldX/Y (already clamped to WORLD_SIZE and floored)
-            const gx = Math.floor(currentMouseWorldX / GRID_SIZE) * GRID_SIZE;
-            const gy = Math.floor(currentMouseWorldY / GRID_SIZE) * GRID_SIZE;
-            rawSelectionCandidates.push({ x: gx, y: gy });
         }
-        
-        // Filter rawSelectionCandidates to get final selected data within WORLD_SIZE - EPSILON
-        selectedPixels = rawSelectionCandidates.filter(p => 
-            p.x >= 0 && p.x < WORLD_SIZE - EPSILON && 
-            p.y >= 0 && p.y < WORLD_SIZE - EPSILON
-        );
+
+        // [4] 결과 저장
+        selectedPixels = validPixels;
+
+        // --- End of User's Provided Intersection Method Logic ---
 
         
 
