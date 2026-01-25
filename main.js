@@ -100,7 +100,7 @@ function draw() {
     // Draw visual indicator for selected pixels (after selection is finalized)
     selectedPixels.forEach(p => {
         ctx.strokeStyle = 'yellow';
-        ctx.lineWidth = 2 / scale;
+        ctx.lineWidth = 2; // Changed from 2 / scale to a fixed value for better visibility
         ctx.strokeRect(p.x, p.y, GRID_SIZE, GRID_SIZE);
     });
 
@@ -384,6 +384,8 @@ function updateSidePanel(singleOwnedPixel = null) {
                 statusTag.style.background = '#00d4ff'; // Blue for all unowned
             }
             areaIdText.innerText = `총 구독료: ₩ ${(unownedInSelection.length * 1000).toLocaleString()}`;
+            debugLog(`Side Panel Status Tag: ${statusTag.textContent}`);
+            debugLog(`Side Panel Area ID Text: ${areaIdText.innerText}`);
         } else if (ownedInSelection.length > 0) { // All selected pixels are owned
             pixelInfo.style.display = 'block';
             statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
@@ -391,17 +393,21 @@ function updateSidePanel(singleOwnedPixel = null) {
             ownerNickname.textContent = '-';
             idolGroup.textContent = '-';
             areaIdText.innerText = `총 ${totalSelected}개의 소유된 픽셀`;
+            debugLog(`Side Panel Status Tag: ${statusTag.textContent}`);
+            debugLog(`Side Panel Area ID Text: ${areaIdText.innerText}`);
             
             // If it's a single owned pixel from a direct click, show its specific info
             if (ownedInSelection.length === 1 && singleOwnedPixel && ownedInSelection[0].x === singleOwnedPixel.x && ownedInSelection[0].y === singleOwnedPixel.y) {
                 ownerNickname.textContent = singleOwnedPixel.owner_nickname;
                 idolGroup.textContent = singleOwnedPixel.idol_group_name;
                 areaIdText.innerText = `Area #${singleOwnedPixel.x/GRID_SIZE}-${singleOwnedPixel.y/GRID_SIZE}`;
+                debugLog(`Side Panel Area ID Text (single owned): ${areaIdText.innerText}`);
             }
         }
     } else { // No pixels selected
         sidePanel.style.display = 'none';
         areaIdText.innerText = `Area #??`; // Default state
+        debugLog(`Side Panel: Hidden (No pixels selected)`);
     }
 }
 
