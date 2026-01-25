@@ -22,6 +22,7 @@ const socket = io();
 const WORLD_SIZE = 3162;
 const GRID_SIZE = 20;
 const MAX_GRID_START_COORD = Math.floor((WORLD_SIZE - 1) / GRID_SIZE) * GRID_SIZE;
+const EPSILON = 0.001; // Small margin for floating point comparisons
 let scale = 0.2;
 let offsetX = window.innerWidth / 2 - (WORLD_SIZE * scale) / 2;
 let offsetY = window.innerHeight / 2 - (WORLD_SIZE * scale) / 2;
@@ -331,7 +332,7 @@ window.onmouseup = (e) => {
 
                             // Ensure x, y are within WORLD_SIZE and only select pixels
 
-                            if (x >= 0 && x < WORLD_SIZE && y >= 0 && y < WORLD_SIZE) {
+                            if (x >= 0 && x < WORLD_SIZE - EPSILON && y >= 0 && y < WORLD_SIZE - EPSILON) {
 
                                 selectedPixels.push({ x, y });
 
@@ -346,7 +347,7 @@ window.onmouseup = (e) => {
          else { // Handle single click or very small drag as a single pixel selection
              const worldX = (e.clientX - offsetX) / scale; // Recalculate based on current mouse pos for click
              const worldY = (e.clientY - offsetY) / scale;
-             if (worldX >= 0 && worldX < WORLD_SIZE && worldY >= 0 && worldY < WORLD_SIZE) {
+             if (worldX >= 0 && worldX < WORLD_SIZE - EPSILON && worldY >= 0 && worldY < WORLD_SIZE - EPSILON) {
                  const gx = Math.floor(worldX / GRID_SIZE) * GRID_SIZE;
                  const gy = Math.floor(worldY / GRID_SIZE) * GRID_SIZE;
                  selectedPixels.push({ x: gx, y: gy });
@@ -429,7 +430,7 @@ function updateSidePanel(singleOwnedPixel = null) {
 
     // --- Implement Request 1: Data Filtering for selectedPixels ---
     const validSelectedPixels = selectedPixels.filter(p => 
-        p.x >= 0 && p.x < WORLD_SIZE && p.y >= 0 && p.y < WORLD_SIZE
+        p.x >= 0 && p.x < WORLD_SIZE - EPSILON && p.y >= 0 && p.y < WORLD_SIZE - EPSILON
     );
     const totalSelected = validSelectedPixels.length;
     
@@ -491,7 +492,7 @@ subscribeButton.onclick = () => {
 
     // --- Implement Request 1: Data Filtering for selectedPixels before sending to server ---
     const pixelsToSend = selectedPixels.filter(p => 
-        p.x >= 0 && p.x < WORLD_SIZE && p.y >= 0 && p.y < WORLD_SIZE
+        p.x >= 0 && p.x < WORLD_SIZE - EPSILON && p.y >= 0 && p.y < WORLD_SIZE - EPSILON
     );
 
     if (pixelsToSend.length === 0) {
