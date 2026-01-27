@@ -42,25 +42,31 @@ passport.deserializeUser((id, done) => {
 
 // Google Strategy
 if (process.env.GOOGLE_CLIENT_ID) {
+    console.log("Google Client ID loaded:", process.env.GOOGLE_CLIENT_ID.substring(0, 10) + "...");
     passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/auth/google/callback"
     },
         function (accessToken, refreshToken, profile, cb) {
+            console.log("Google Auth Callback received for:", profile.displayName);
             try {
                 // Check if user exists
                 let user = db.prepare('SELECT * FROM users WHERE provider = ? AND provider_id = ?').get('google', profile.id);
 
                 if (!user) {
+                    console.log("Creating new user for:", profile.displayName);
                     // Create user
                     const email = (profile.emails && profile.emails.length > 0) ? profile.emails[0].value : null;
                     const insert = db.prepare('INSERT INTO users (provider, provider_id, email, nickname) VALUES (?, ?, ?, ?)');
                     const info = insert.run('google', profile.id, email, profile.displayName);
                     user = { id: info.lastInsertRowid, provider: 'google', provider_id: profile.id, email: email, nickname: profile.displayName };
+                } else {
+                    console.log("Existing user found:", user.nickname);
                 }
                 return cb(null, user);
             } catch (err) {
+                console.error("Error in Google Auth Callback:", err);
                 return cb(err);
             }
         }

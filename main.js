@@ -931,42 +931,44 @@ function updateSidePanel(singleOwnedPixel = null) {
 // --- User Auth ---
 let currentUser = null;
 
-function checkAuth() {
-    fetch('/api/me')
-        .then(res => {
-            if (res.ok) return res.json();
+async function checkAuth() {
+    const loginBtn = document.getElementById('login-btn');
+    const userInfo = document.getElementById('user-info');
+    const userNickname = document.getElementById('user-nickname');
+
+    try {
+        const response = await fetch('/api/me');
+        if (response.ok) {
+            currentUser = await response.json();
+            userNickname.textContent = currentUser.nickname;
+            userInfo.style.display = 'flex';
+            loginBtn.style.display = 'none';
+
+            // Enable and pre-fill for logged-in users
+            if (nicknameInput) {
+                nicknameInput.value = currentUser.nickname;
+                nicknameInput.disabled = false; // Allow editing if desired, or keep true if strictly tied to account
+                nicknameInput.readOnly = true; // Based on "can't write", usually implies using the account name
+                nicknameInput.placeholder = '닉네임';
+                nicknameInput.style.backgroundColor = '#333';
+            }
+        } else {
             throw new Error('Not logged in');
-        })
-        .then(user => {
-            currentUser = user;
-            // Update UI
-            const userInfo = document.getElementById('user-info');
-            const userNickname = document.getElementById('user-nickname');
-            const loginBtn = document.getElementById('login-btn');
-            
-            if (userInfo && userNickname && loginBtn) {
-                userInfo.style.display = 'block';
-                userNickname.textContent = user.nickname;
-                loginBtn.style.display = 'none';
-                
-                // Auto-fill nickname in panel
-                if (nicknameInput) {
-                    nicknameInput.value = user.nickname;
-                    nicknameInput.readOnly = true; 
-                    nicknameInput.style.backgroundColor = '#333';
-                }
-            }
-        })
-        .catch(() => {
-            currentUser = null;
-            const userInfo = document.getElementById('user-info');
-            const loginBtn = document.getElementById('login-btn');
-            
-            if (userInfo && loginBtn) {
-                userInfo.style.display = 'none';
-                loginBtn.style.display = 'block';
-            }
-        });
+        }
+    } catch (error) {
+        console.log('User not logged in or auth check failed.');
+        currentUser = null;
+        if (userInfo) userInfo.style.display = 'none';
+        if (loginBtn) loginBtn.style.display = 'block';
+
+        // Disable for guests
+        if (nicknameInput) {
+            nicknameInput.value = '';
+            nicknameInput.disabled = true;
+            nicknameInput.placeholder = '로그인이 필요합니다';
+            nicknameInput.style.backgroundColor = 'rgba(255,255,255,0.05)';
+        }
+    }
 }
 
 checkAuth();
@@ -1006,7 +1008,7 @@ subscribeButton.onclick = async () => {
         
         // --- PORTONE V2 REQUEST ---
         const response = await PortOne.requestPayment({
-            storeId: "iamporttest_3",
+            storeId: "store-81d6360b-5e80-4765-b7df-09333509eb04", // Updated from screenshot
             channelKey: "channel-key-c55bfde2-056f-414f-b62c-cf4d2faddfdf",
             paymentId: paymentId,
             orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
