@@ -1,3 +1,36 @@
 # Tasks
 
-- [ ] Run server <!-- id: 0 -->
+- [x] Run server <!-- id: 0 -->
+- [x] Scale Layout to 10M pixels <!-- id: 4 -->
+- [x] Push Changes to Git <!-- id: 5 -->
+- [x] Optimize Performance <!-- id: 6 -->
+    - [x] Change `pixels` Array to Map (O(1) lookup) <!-- id: 7 -->
+    - [x] Optimize Selection Logic (reduce loops) <!-- id: 8 -->
+- [x] Add Owner Stats Display <!-- id: 9 -->
+    - [x] track pixel counts per user <!-- id: 10 -->
+    - [x] display count and market share in side panel <!-- id: 11 --> 
+- [x] Push Final Updates to Git <!-- id: 12 -->
+- [x] Fix Mixed Selection Purchase Logic <!-- id: 13 -->
+- [x] Show Owner Info for Multi-Select Drag <!-- id: 14 -->
+- [x] Implement Help Feature (F1) <!-- id: 15 -->
+- [x] Refine Initial View (Add Padding) <!-- id: 16 -->
+- [x] Implement Dynamic Group Labels (Cluster & Scale) <!-- id: 17 -->
+- [x] Refine Label Scaling (Prevent Overlap) <!-- id: 18 -->
+- [x] Implement Auto-Scroll on Drag edge <!-- id: 19 -->
+- [x] Optimize Bulk Pixel Purchase (Batch Processing) <!-- id: 20 -->
+
+- [/] Google Authentication Setup
+    - [x] Configure Passport Google Strategy in `server.js`
+    - [x] Add Login/Logout UI in `index.html`
+    - [ ] Add User Profile Persistence (Database) - *Partially Done (Table created)*
+    - [ ] Verify Google Auth Flow with Real Keys
+- [ ] Apple Authentication Setup
+    - [ ] Configure Passport Apple Strategy
+    - [ ] Add Apple Login Button
+- [x] UI/UX Refinement
+    - [x] Fix Canvas Header Overlap
+    - [x] Debug Blank Canvas Issue (Data Loading & Rendering limits)
+    - [x] Optimize Rendering Performance (Viewport Culling & Optimized Loop)
+    - [x] Adjust Initial Canvas Position (Vertical Offset 5%)
+- [ ] Implementation Payment System
+    - [ ] Configure PortOne (Toss Payments) Keys
