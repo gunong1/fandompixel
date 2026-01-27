@@ -31,6 +31,10 @@
             color: white;
             font-size: 14px;
         }
+        .form-group select option {
+             background-color: #0a0f19;
+             color: white;
+        }
 
         /* 하단 상태바 */
         #status-bar { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 90; }
@@ -66,12 +70,90 @@
                 <input type="text" id="nickname-input" placeholder="닉네임을 입력하세요">
             </div>
             <div class="form-group">
-                <label for="idol-select">아이돌 그룹</label>
+                <label for="idol-select">그룹</label>
                 <select id="idol-select">
+                    <!-- Global/Legends -->
                     <option value="BTS">BTS</option>
                     <option value="Blackpink">Blackpink</option>
                     <option value="TWICE">TWICE</option>
+                    <option value="EXO">EXO</option>
+                    <option value="Seventeen">Seventeen</option>
+                    <option value="NCT">NCT</option>
+                    <option value="Red Velvet">Red Velvet</option>
+                    <option value="Mamamoo">Mamamoo</option>
+                    <option value="GOT7">GOT7</option>
+                    <option value="Monsta X">Monsta X</option>
+                    <option value="Stray Kids">Stray Kids</option>
+                    <option value="ITZY">ITZY</option>
+                    <option value="TXT">TXT</option>
+                    <option value="ATEEZ">ATEEZ</option>
+                    <option value="(G)I-DLE">(G)I-DLE</option>
+                    <option value="aespa">aespa</option>
+                    <option value="ENHYPEN">ENHYPEN</option>
+                    <option value="IVE">IVE</option>
                     <option value="NewJeans">NewJeans</option>
+                    <option value="LE SSERAFIM">LE SSERAFIM</option>
+                    <option value="NMIXX">NMIXX</option>
+                    <option value="Kep1er">Kep1er</option>
+                    <option value="STAYC">STAYC</option>
+                    <option value="TREASURE">TREASURE</option>
+                    <option value="The Boyz">The Boyz</option>
+                    <option value="ASTRO">ASTRO</option>
+                    <option value="OH MY GIRL">OH MY GIRL</option>
+                    <option value="WJSN">WJSN</option>
+                    <option value="Dreamcatcher">Dreamcatcher</option>
+                    <option value="LOONA">LOONA</option>
+                    <option value="CRAVITY">CRAVITY</option>
+                    <option value="ONEUS">ONEUS</option>
+                    <option value="P1Harmony">P1Harmony</option>
+                    
+                    <!-- 2nd Gen / Legends -->
+                    <option value="BIGBANG">BIGBANG</option>
+                    <option value="Girls' Generation">Girls' Generation</option>
+                    <option value="SHINee">SHINee</option>
+                    <option value="Super Junior">Super Junior</option>
+                    <option value="2PM">2PM</option>
+                    <option value="TVXQ!">TVXQ!</option>
+                    <option value="2NE1">2NE1</option>
+                    <option value="Apink">Apink</option>
+                    <option value="SISTAR">SISTAR</option>
+                    <option value="Miss A">Miss A</option>
+                    <option value="Girl's Day">Girl's Day</option>
+                    <option value="AOA">AOA</option>
+                    <option value="EXID">EXID</option>
+                    <option value="BTOB">BTOB</option>
+                    <option value="HIGHLIGHT">HIGHLIGHT</option>
+                    <option value="INFINITE">INFINITE</option>
+                    <option value="VIXX">VIXX</option>
+                    <option value="B1A4">B1A4</option>
+                    <option value="Block B">Block B</option>
+                    <option value="WINNER">WINNER</option>
+                    <option value="iKON">iKON</option>
+                    <option value="KARA">KARA</option>
+                    <option value="T-ara">T-ara</option>
+                    <option value="4Minute">4Minute</option>
+                    <option value="Wonder Girls">Wonder Girls</option>
+                    <option value="f(x)">f(x)</option>
+                    
+                    <!-- Produce / Project Groups -->
+                    <option value="IOI">I.O.I</option>
+                    <option value="Wanna One">Wanna One</option>
+                    <option value="IZ*ONE">IZ*ONE</option>
+                    <option value="X1">X1</option>
+                    <option value="ZEROBASEONE">ZEROBASEONE</option>
+                    
+                    <!-- Rookies / 4th-5th Gen -->
+                    <option value="RIIZE">RIIZE</option>
+                    <option value="TWS">TWS</option>
+                    <option value="BOYNEXTDOOR">BOYNEXTDOOR</option>
+                    <option value="BABYMONSTER">BABYMONSTER</option>
+                    <option value="ILLIT">ILLIT</option>
+                    <option value="KISS OF LIFE">KISS OF LIFE</option>
+                    <option value="tripleS">tripleS</option>
+                    <option value="PLAVE">PLAVE</option>
+                    <option value="QWER">QWER</option>
+                    <option value="LUCY">LUCY</option>
+                    <option value="DAY6">DAY6</option>
                 </select>
             </div>
             <div style="font-size: 14px; color: #ccc; text-align: right; margin-top: 15px;">
@@ -108,6 +190,6 @@
     <canvas id="pixelCanvas"></canvas>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="main.js"></script>
+    <script src="main.js?v=batch_debug_1"></script>
 </body>
 </html>
