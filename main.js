@@ -1255,6 +1255,11 @@ canvas.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
         lastTouchX = touch.clientX;
         lastTouchY = touch.clientY;
+
+        // Sync mouse coordinates for autoPanLoop
+        currentMouseX = touch.clientX;
+        currentMouseY = touch.clientY;
+
         isDraggingCanvas = false;
         isLongPressMode = false;
 
@@ -1289,6 +1294,11 @@ canvas.addEventListener('touchmove', throttle((e) => {
 
     if (e.touches.length === 1) {
         const touch = e.touches[0];
+
+        // Sync mouse coordinates for autoPanLoop
+        currentMouseX = touch.clientX;
+        currentMouseY = touch.clientY;
+
         const deltaX = touch.clientX - lastTouchX;
         const deltaY = touch.clientY - lastTouchY;
         const moveDist = Math.hypot(deltaX, deltaY);
