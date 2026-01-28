@@ -661,7 +661,9 @@ fetch('/api/pixels')
             updatePixelStore(p);
         });
 
-        requestClusterUpdate(); // Initial cluster calculation
+        recalculateClusters(); // Initial calculation (explicit)
+        updateRankingBoard(); // Update ranking board
+        // requestClusterUpdate(); // Not needed if we do it here, but keeping it doesn't hurt if logic changes back
         draw(); // Initial draw
     })
     .catch(e => console.error('Error fetching initial pixels:', e));

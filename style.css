@@ -132,18 +132,17 @@ h1 {
 }
 
 /* Minimap */
-#minimap {
-    position: absolute;
+#minimap-container {
+    position: fixed;
+    /* Fixed is better than absolute for UI overlay */
     bottom: 20px;
     right: 20px;
     width: 150px;
     height: 150px;
-    background: rgba(255, 255, 255, 0.05);
-    /* Updated from index.html inline style */
-    /* background: rgba(0, 0, 0, 0.5);  From previous style.css or inline? Inline says rgba(0,0,0,0.5) border #333 */
-    /* Let's use the better looking one */
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid #333;
+    z-index: 90;
+    /* Ensure visibility */
 }
 
 #minimap-view {
@@ -193,6 +192,13 @@ h1 {
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+#user-info {
+    display: none;
+    /* Hidden by default */
+    align-items: center;
+    gap: 10px;
 }
 
 /* Mobile Controls */
