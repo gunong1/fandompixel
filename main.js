@@ -81,6 +81,23 @@ let isDrawing = false; // Throttling flag for draw()
 
 // Refactored: Fit to screen logic
 // Refactored: Fit to screen logic
+const MAX_GRID_START_COORD = WORLD_SIZE - GRID_SIZE;
+
+// --- Canvas Resizing Logic ---
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    draw();
+}
+
+window.addEventListener('resize', () => {
+    resizeCanvas();
+    fitToScreen(); // Re-center on resize
+});
+
+// Initial Resize
+resizeCanvas();
+
 function fitToScreen() {
     // Fit to Screen Logic
     const PADDING = 60; // Reduced padding for better visibility
@@ -344,11 +361,11 @@ function requestClusterUpdate() {
 function gameLoop(timestamp) {
     // 1. Handle Cluster Updates (Throttled)
     if (pendingClusterUpdate && (timestamp - lastClusterUpdateTime > CLUSTER_UPDATE_INTERVAL)) {
-        recalculateClusters();
-        updateRankingBoard(); // Update ranking with clusters
+        // recalculateClusters(); // Heavy operation, disabling auto-loop to prevent freeze
+        // updateRankingBoard();
         lastClusterUpdateTime = timestamp;
         pendingClusterUpdate = false;
-        needsRedraw = true; // Clusters changed, redraw needed
+        // needsRedraw = true; 
     }
 
     // 2. Handle Rendering
@@ -1035,16 +1052,19 @@ async function checkAuth() {
             // Enable and pre-fill for logged-in users
             if (nicknameInput) {
                 nicknameInput.value = currentUser.nickname;
-                nicknameInput.disabled = false; // Allow editing if desired, or keep true if strictly tied to account
-                nicknameInput.readOnly = true; // Based on "can't write", usually implies using the account name
+                nicknameInput.disabled = false;
+                nicknameInput.readOnly = true;
                 nicknameInput.placeholder = '닉네임';
                 nicknameInput.style.backgroundColor = '#333';
             }
         } else {
-            throw new Error('Not logged in');
+            // Not logged in (401) - Expected for guests
+            // silently handle as guest
+            currentUser = null;
         }
     } catch (error) {
-        console.log('User not logged in or auth check failed.');
+        // Network error or other issues
+        console.debug('Auth check status: User is guest or offline.');
         currentUser = null;
         if (userInfo) userInfo.style.display = 'none';
         if (loginBtn) loginBtn.style.display = 'block';
@@ -1162,7 +1182,7 @@ subscribeButton.onclick = async () => {
     }
 };
 
-canvas.onwheel = (e) => {
+canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const mouseX = e.clientX - offsetX;
@@ -1173,7 +1193,7 @@ canvas.onwheel = (e) => {
     scale *= delta;
     scale = Math.min(Math.max(scale, 0.0005), 20);
     draw();
-};
+}, { passive: false });
 
 function updateMinimap() {
     const mv = document.getElementById('minimap-view');
