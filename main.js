@@ -447,6 +447,16 @@ const idolInfo = {
     'f(x)': { color: 'rgba(128, 128, 255, 0.9)', initials: 'f(x)' }, // Periwinkle
 };
 
+// --- Populate Idol Dropdown (Sorted Alphabetically) ---
+if (idolSelect) {
+    const sortedIdolNames = Object.keys(idolInfo).sort((a, b) => a.localeCompare(b));
+    sortedIdolNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        idolSelect.appendChild(option);
+    });
+}
 
 // --- Render Loop (Simplified) ---
 function gameLoop(timestamp) {
@@ -1365,7 +1375,7 @@ canvas.addEventListener('touchstart', (e) => {
                     preventDefault: () => { }
                 });
             }
-        }, LONG_PRESS_DURATION);
+        }, 150);
 
     } else if (e.touches.length === 2) {
         clearTimeout(longPressTimer); // Cancel long press on 2-finger interaction

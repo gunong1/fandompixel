@@ -23,8 +23,15 @@
   - [x] Add Notice button to `index.html`.
   - [x] Create Notice modal structure in `index.html`.
   - [x] Implement toggle logic in `main.js`.
-- [ ] **Feature: Dynamic Pricing**
-  - [ ] Implement `getPixelPrice` in `server.js` and `main.js`.
-  - [ ] Update frontend to calculate total price during selection.
-  - [ ] Update backend to validate price during purchase (if applicable) or ensure correct amount is passed.
-  - [ ] Draw visual guide for high-value zones on canvas.
+- [x] **Feature: Dynamic Pricing**
+  - [x] Implement `getPixelPrice` in `server.js` and `main.js`.
+  - [x] Update frontend to calculate total price during selection.
+  - [x] Update backend to validate price during purchase (if applicable) or ensure correct amount is passed.
+  - [x] Draw visual guide for high-value zones on canvas.
+- [ ] **Deployment: Fix Google OAuth**
+  - [ ] Update `server.js` to strictly checking `callbackURL` from env.
+  - [ ] Document Redirect URIs for user.
+- [ ] **Mobile UX: Touch Sensitivity**
+  - [x] Reduce Long Press Duration to 0.15s.
+- [x] **UI: Sort Idol List**
+  - [x] Sort dropdown alphabetically (ABC).
