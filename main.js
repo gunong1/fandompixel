@@ -154,6 +154,18 @@ let currentMouseX = 0;
 let currentMouseY = 0;
 let autoPanAnimationFrameId = null;
 
+// NEW: Mobile Touch Handling Variables
+let isMobileSelectMode = false;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let lastPinchDistance = 0;
+
+// NEW: Mobile Touch Handling Variables
+let isMobileSelectMode = false;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let lastPinchDistance = 0;
+
 // --- Idol Group Info ---
 const idolInfo = {
     // --- Gen 3 & Global Legends ---
@@ -1191,20 +1203,136 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// --- Canvas Resizing Logic ---
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    draw();
+
+// --- Mobile Controls ---
+const mobileModeBtn = document.getElementById('mobile-mode-btn');
+if (mobileModeBtn) {
+    mobileModeBtn.addEventListener('click', () => {
+        isMobileSelectMode = !isMobileSelectMode;
+        if (isMobileSelectMode) {
+            mobileModeBtn.textContent = '선택';
+            mobileModeBtn.style.color = '#ff4d4d'; // Red for select mode
+            mobileModeBtn.style.borderColor = '#ff4d4d';
+        } else {
+            mobileModeBtn.textContent = '이동';
+            mobileModeBtn.style.color = '#00d4ff'; // Blue for move mode
+            mobileModeBtn.style.borderColor = '#00d4ff';
+            // Clear selection if switching back to move mode
+            isSelectingPixels = false;
+            selectedPixels = [];
+            draw();
+            sidePanel.style.display = 'none';
+        }
+    });
+
+    // Prevent default touch actions on the button
+    mobileModeBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
 }
 
-window.addEventListener('resize', () => {
-    resizeCanvas();
-    fitToScreen(); // Re-center on resize
+// --- Touch Event Listeners ---
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent scrolling
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+
+        if (isMobileSelectMode) {
+            // Start Selection
+            // Use fake event to reuse mouse logic
+            window.onmousedown({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                target: canvas,
+                ctrlKey: false, // Force select mode logic
+                preventDefault: () => { }
+            });
+        } else {
+            // Start Panning
+            isDraggingCanvas = true;
+        }
+    } else if (e.touches.length === 2) {
+        // Start Pinch Zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', throttle((e) => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - lastTouchX;
+        const deltaY = touch.clientY - lastTouchY;
+
+        if (isMobileSelectMode) {
+            // Handle Selection Drag
+            if (isSelectingPixels) {
+                updateSelection(touch.clientX, touch.clientY);
+            }
+        } else if (isDraggingCanvas) {
+            // Handle Pan
+            offsetX += deltaX;
+            offsetY += deltaY;
+            draw();
+        }
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+    } else if (e.touches.length === 2) {
+        // Handle Pinch Zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentdist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+
+        if (lastPinchDistance > 0) {
+            const zoomSpeed = 0.005;
+            const deltaZoom = (currentdist - lastPinchDistance) * zoomSpeed;
+
+            // Zoom towards center of pinch (approximate as screen center for simplicity, or calc midpoint)
+            // Simple center zoom:
+            const zoomFactor = 1 + deltaZoom;
+            const newScale = Math.max(0.01, Math.min(5, scale * zoomFactor));
+
+            // Adjust offset to zoom relative to center logic similar to wheel
+            // For now, simple zoom is better than buggy zoom
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const worldX = (centerX - offsetX) / scale;
+            const worldY = (centerY - offsetY) / scale;
+
+            scale = newScale;
+            offsetX = centerX - worldX * scale;
+            offsetY = centerY - worldY * scale;
+
+            draw();
+        }
+        lastPinchDistance = currentdist;
+    }
+}, 16), { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    if (e.touches.length < 2) {
+        lastPinchDistance = 0; // Reset pinch
+    }
+
+    if (isDraggingCanvas) {
+        isDraggingCanvas = false;
+    }
+
+    if (isSelectingPixels) {
+        // End Selection
+        const touch = e.changedTouches[0]; // Use changedTouches for touchend
+        window.onmouseup({
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            target: canvas,
+            preventDefault: () => { }
+        });
+    }
 });
 
-// Initial resizing
-resizeCanvas();
 
 
 

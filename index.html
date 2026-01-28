@@ -1,89 +1,56 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>팬덤 픽셀 (Fandom Pixel) - 10,000,000 PIXELS</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #05070a; font-family: 'Pretendard', sans-serif; color: white; }
-        canvas { display: block; cursor: grab; }
-        canvas:active { cursor: grabbing; }
-        
-        /* UI 레이어 */
-        .panel { background: rgba(10, 15, 25, 0.9); backdrop-filter: blur(15px); padding: 20px; border-radius: 16px; border: 1px solid rgba(0, 212, 255, 0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; }
-        
-        #header { position: absolute; top: 20px; left: 20px; z-index: 10; }
-        h1 { margin: 0; font-size: 24px; color: #00d4ff; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
-        
-        /* 구독 정보 패널 */
-        #side-panel { position: absolute; top: 70px; right: 20px; width: 280px; display: none; z-index: 100; }
-        .subscribe-btn { width: 100%; padding: 14px; background: linear-gradient(45deg, #00d4ff, #0055ff); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 15px; transition: 0.3s; }
-        .subscribe-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 212, 255, 0.4); }
-
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; font-size: 12px; margin-bottom: 5px; color: #aaa; }
-        .form-group input, .form-group select {
-            width: 100%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 4px;
-            padding: 8px;
-            color: white;
-            font-size: 14px;
-        }
-        .form-group select option {
-             background-color: #0a0f19;
-             color: white;
-        }
-
-        /* 하단 상태바 */
-        #status-bar { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 10px; z-index: 90; }
-        .tag { background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 12px; }
-
-        #minimap-container { position: absolute; bottom: 20px; right: 20px; width: 180px; height: 180px; background: rgba(0,0,0,0.5); border: 1px solid #333; }
-        #minimap-view { position: absolute; border: 1px solid #00d4ff; background: rgba(0, 212, 255, 0.1); }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div id="auth-header" style="position: fixed; top: 10px; right: 20px; z-index: 1000; display: flex; gap: 10px; align-items: center;">
-        <div id="user-info" style="display: none; color: white; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 20px; backdrop-filter: blur(5px);">
+    <div id="auth-header">
+        <div id="user-info">
             <span id="user-nickname"></span>
-            <a href="/auth/logout" style="color: #ff6b6b; margin-left: 10px; text-decoration: none; font-weight: bold;">Logout</a>
+            <a href="/auth/logout">Logout</a>
         </div>
-        <a id="login-btn" href="/auth/google" style="display: block; background: white; color: black; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
+        <a id="login-btn" href="/auth/google">
             Sign in with Google
         </a>
     </div>
 
     <div id="container">
         <h1>FANDOM PIXEL</h1>
-        <div style="font-size: 12px; opacity: 0.6;">10,000,000 PIXELS GLOBAL STAGE</div>
+        <div class="subtitle">10,000,000 PIXELS GLOBAL STAGE</div>
     </div>
 
     <!-- NEW: Fandom Ranking Board -->
-    <div id="ranking-board" style="position: absolute; top: 80px; left: 20px; width: 220px; padding: 15px; background: rgba(10, 15, 25, 0.85); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(0, 212, 255, 0.2); z-index: 90; display: block;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #00d4ff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; display: flex; justify-content: space-between;">
+    <div id="ranking-board" class="panel">
+        <h3>
             <span>🏆 Fandom Ranking</span>
         </h3>
-        <ul id="ranking-list" style="list-style: none; padding: 0; margin: 0; font-size: 13px;">
-            <li style="color: #aaa; text-align: center; padding: 10px;">Loading ranking...</li>
+        <ul id="ranking-list">
+            <li>Loading ranking...</li>
         </ul>
     </div>
 
     <div id="side-panel" class="panel">
-        <h2 id="area-id" style="margin: 0 0 10px 0; font-size: 18px;">Area #7721</h2>
-        <div id="pixel-info" style="margin-bottom: 15px;">
-            <span id="status-tag" style="background: #00d4ff; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">구독 가능</span>
-            <div id="selected-pixel-count" style="font-size: 12px; color: #aaa; margin-top: 5px; display: none;"></div>
-            <div style="font-size: 14px; color: #ccc; margin-top: 10px;">
-                <div style="display:flex; justify-content: space-between;"><span>소유자</span> <span id="owner-nickname">없음</span></div>
-                <div style="display:flex; justify-content: space-between;"><span>아이돌</span> <span id="idol-group">없음</span></div>
+        <h2 id="area-id">Area #7721</h2>
+        <div id="pixel-info">
+            <span id="status-tag">구독
+                가능</span>
+            <div id="selected-pixel-count"></div>
+            <div class="pixel-owner-info">
+                <span>소유자</span> <span id="owner-nickname">없음</span>
+            </div>
+            <div class="pixel-idol-info">
+                <span>아이돌</span> <span id="idol-group">없음</span>
             </div>
         </div>
-        
+
         <div id="purchase-form">
-            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-            <p style="font-size: 12px; line-height: 1.5; color: #aaa;">이 구역을 구독하여 당신의 아티스트를 위한 영토로 선포하세요.</p>
+            <hr>
+            <p>이 구역을 구독하여 당신의 아티스트를 위한 영토로 선포하세요.</p>
             <div class="form-group">
                 <label for="nickname-input">닉네임</label>
                 <input type="text" id="nickname-input" placeholder="로그인이 필요합니다" disabled>
@@ -125,7 +92,7 @@
                     <option value="CRAVITY">CRAVITY</option>
                     <option value="ONEUS">ONEUS</option>
                     <option value="P1Harmony">P1Harmony</option>
-                    
+
                     <!-- 2nd Gen / Legends -->
                     <option value="BIGBANG">BIGBANG</option>
                     <option value="Girls' Generation">Girls' Generation</option>
@@ -153,14 +120,14 @@
                     <option value="4Minute">4Minute</option>
                     <option value="Wonder Girls">Wonder Girls</option>
                     <option value="f(x)">f(x)</option>
-                    
+
                     <!-- Produce / Project Groups -->
                     <option value="IOI">I.O.I</option>
                     <option value="Wanna One">Wanna One</option>
                     <option value="IZ*ONE">IZ*ONE</option>
                     <option value="X1">X1</option>
                     <option value="ZEROBASEONE">ZEROBASEONE</option>
-                    
+
                     <!-- Rookies / 4th-5th Gen -->
                     <option value="RIIZE">RIIZE</option>
                     <option value="TWS">TWS</option>
@@ -175,7 +142,7 @@
                     <option value="DAY6">DAY6</option>
                 </select>
             </div>
-            <div style="font-size: 14px; color: #ccc; text-align: right; margin-top: 15px;">
+            <div class="payment-info">
                 <span>결제 금액:</span> <span>₩ 1,000</span>
             </div>
             <button class="subscribe-btn" id="subscribe-button">구역 구독하기</button>
@@ -183,33 +150,46 @@
     </div>
 
     <div id="status-bar">
-        <div class="tag" id="help-btn" style="cursor: pointer; background: rgba(0, 212, 255, 0.2); color: #00d4ff; font-weight: bold;">[F1] 도움말</div>
+        <div class="tag" id="help-btn">
+            [F1] 도움말
+        </div>
     </div>
 
     <!-- Help Modal -->
-    <div id="help-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="panel" style="width: 400px; max-width: 90%; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #00d4ff;">사용 방법</h2>
-                <span id="close-help" style="cursor: pointer; font-size: 24px; color: #aaa;">&times;</span>
+    <div id="help-modal">
+        <div class="panel">
+            <div class="help-modal-header">
+                <h2>사용 방법</h2>
+                <span id="close-help">&times;</span>
             </div>
-            <ul style="list-style: none; padding: 0; margin: 0; color: #ddd; font-size: 14px; line-height: 2;">
-                <li style="display: flex; justify-content: space-between;"><span>캔버스 확대/축소</span> <span style="color: #00d4ff;">마우스 휠</span></li>
-                <li style="display: flex; justify-content: space-between;"><span>캔버스 이동</span> <span style="color: #00d4ff;">Ctrl + 드래그</span></li>
-                <li style="display: flex; justify-content: space-between;"><span>화면 중앙 정렬</span> <span style="color: #00d4ff;">스페이스바</span></li>
-                <li style="display: flex; justify-content: space-between;"><span>픽셀 선택</span> <span style="color: #00d4ff;">마우스 클릭</span></li>
-                <li style="display: flex; justify-content: space-between;"><span>다중 픽셀 선택</span> <span style="color: #00d4ff;">마우스 드래그</span></li>
-                <li style="display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"><span>닫기</span> <span style="color: #00d4ff;">ESC</span></li>
+            <ul>
+                <li class="help-item"><span>캔버스 확대/축소</span> <span>마우스 휠</span></li>
+                <li class="help-item"><span>캔버스 이동</span> <span>Ctrl + 드래그</span></li>
+                <li class="help-item"><span>화면 중앙 정렬</span> <span>스페이스바</span></li>
+                <li class="help-item"><span>픽셀 선택</span> <span>마우스 클릭</span></li>
+                <li class="help-item"><span>다중 픽셀 선택</span> <span>마우스 드래그</span></li>
+                <li class="help-item help-item-footer">
+                    <span>닫기</span> <span>ESC</span>
+                </li>
             </ul>
         </div>
     </div>
 
-    <div id="minimap-container"><div id="minimap-view"></div></div>
+    <div id="minimap-container">
+        <div id="minimap-view"></div>
+    </div>
 
     <canvas id="pixelCanvas"></canvas>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <script src="main.js?v=auth_fix"></script>
+    <!-- Mobile Controls -->
+    <div id="mobile-controls">
+        <button id="mobile-mode-btn">
+            이동
+        </button>
+    </div>
 </body>
+
 </html>
