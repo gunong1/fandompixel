@@ -104,6 +104,25 @@ const WORLD_SIZE = 63240;
 const GRID_SIZE = 20;
 const MAX_GRID_START_COORD = Math.floor((WORLD_SIZE - 1) / GRID_SIZE) * GRID_SIZE;
 const EPSILON = 0.001;
+
+// --- Helper: Dynamic Pricing ---
+function getPixelPrice(x, y) {
+    const minCenter = 29620; // 31620 - 2000
+    const maxCenter = 33620; // 31620 + 2000
+    const minMid = 19620;    // 31620 - 12000
+    const maxMid = 43620;    // 31620 + 12000
+
+    // High Value Zone (2000 KRW) - Center 4000x4000 area
+    if (x >= minCenter && x < maxCenter && y >= minCenter && y < maxCenter) {
+        return 2000;
+    }
+    // Mid Value Zone (1000 KRW) - Surrounding 12000x12000 area
+    if (x >= minMid && x < maxMid && y >= minMid && y < maxMid) {
+        return 1000;
+    }
+    // Standard Price (500 KRW)
+    return 500;
+}
 let scale = 0.2;
 let offsetX = 0;
 let offsetY = 0;
@@ -459,6 +478,22 @@ function _render() {
     // Background
     ctx.fillStyle = '#0a0f19';
     ctx.fillRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+    // --- Dynamic Pricing Zones (Visual Guide) ---
+    // Mid Value Zone (1000 KRW) - Center +/- 12000
+    ctx.fillStyle = 'rgba(0, 100, 255, 0.05)';
+    ctx.fillRect(19620, 19620, 24000, 24000);
+
+    // High Value Zone (2000 KRW) - Center +/- 2000
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.08)';
+    ctx.fillRect(29620, 29620, 4000, 4000);
+
+    // Optional: Border for High Value Zone
+    if (scale > 0.05) {
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+        ctx.lineWidth = 2 / scale;
+        ctx.strokeRect(29620, 29620, 4000, 4000);
+    }
 
     // Calculate Visible Viewport
     const VIEWPORT_MARGIN = 100 / scale;
@@ -1025,10 +1060,13 @@ function updateSidePanel(singleOwnedPixel = null) {
                 statusTag.textContent = `${unownedInSelection.length} 픽셀 구매 가능 (${unownedInSelection.length}개 소유됨)`;
                 statusTag.style.background = '#ff9800'; // Orange for mixed
             } else {
-                statusTag.textContent = `${totalSelected} 픽셀 선택됨`;
+                areaIdText.innerText = `총 ${totalSelected} 픽셀 선택됨`;
                 statusTag.style.background = '#00d4ff'; // Blue for all unowned
             }
-            areaIdText.innerText = `총 구독료: ₩ ${(unownedInSelection.length * 1000).toLocaleString()}`;
+
+            // Calculate Total Price Dynamically
+            const totalPrice = unownedInSelection.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
+            areaIdText.innerText = `총 구독료: ₩ ${totalPrice.toLocaleString()}`;
         } else if (ownedInSelection.length > 0) { // All selected pixels are owned
             pixelInfo.style.display = 'block';
             statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
@@ -1158,7 +1196,7 @@ subscribeButton.onclick = async () => {
         return;
     }
 
-    const totalAmount = pixelsToSend.length * 1000;
+    const totalAmount = pixelsToSend.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
     const paymentId = `payment-${Math.random().toString(36).slice(2, 11)}`;
 
     try {

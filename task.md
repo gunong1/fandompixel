@@ -1,36 +1,30 @@
-# Tasks
+# Mobile Responsiveness
 
-- [x] Run server <!-- id: 0 -->
-- [x] Scale Layout to 10M pixels <!-- id: 4 -->
-- [x] Push Changes to Git <!-- id: 5 -->
-- [x] Optimize Performance <!-- id: 6 -->
-    - [x] Change `pixels` Array to Map (O(1) lookup) <!-- id: 7 -->
-    - [x] Optimize Selection Logic (reduce loops) <!-- id: 8 -->
-- [x] Add Owner Stats Display <!-- id: 9 -->
-    - [x] track pixel counts per user <!-- id: 10 -->
-    - [x] display count and market share in side panel <!-- id: 11 --> 
-- [x] Push Final Updates to Git <!-- id: 12 -->
-- [x] Fix Mixed Selection Purchase Logic <!-- id: 13 -->
-- [x] Show Owner Info for Multi-Select Drag <!-- id: 14 -->
-- [x] Implement Help Feature (F1) <!-- id: 15 -->
-- [x] Refine Initial View (Add Padding) <!-- id: 16 -->
-- [x] Implement Dynamic Group Labels (Cluster & Scale) <!-- id: 17 -->
-- [x] Refine Label Scaling (Prevent Overlap) <!-- id: 18 -->
-- [x] Implement Auto-Scroll on Drag edge <!-- id: 19 -->
-- [x] Optimize Bulk Pixel Purchase (Batch Processing) <!-- id: 20 -->
+- [x] Create Implementation Plan <!-- id: 16 -->
+- [x] HTML: Update Meta & Add Mobile Controls <!-- id: 17 -->
+- [x] CSS: Responsive Layouts & Bottom Sheet <!-- id: 18 -->
+- [x] JS: Touch Events (Pan, Select, Pinch) <!-- id: 19 -->
+- [x] Verify on Mobile <!-- id: 20 -->
 
-- [/] Google Authentication Setup
-    - [x] Configure Passport Google Strategy in `server.js`
-    - [x] Add Login/Logout UI in `index.html`
-    - [ ] Add User Profile Persistence (Database) - *Partially Done (Table created)*
-    - [ ] Verify Google Auth Flow with Real Keys
-- [ ] Apple Authentication Setup
-    - [ ] Configure Passport Apple Strategy
-    - [ ] Add Apple Login Button
-- [x] UI/UX Refinement
-    - [x] Fix Canvas Header Overlap
-    - [x] Debug Blank Canvas Issue (Data Loading & Rendering limits)
-    - [x] Optimize Rendering Performance (Viewport Culling & Optimized Loop)
-    - [x] Adjust Initial Canvas Position (Vertical Offset 5%)
-- [ ] Implementation Payment System
-    - [ ] Configure PortOne (Toss Payments) Keys
+# Scalability & Performance ⭐️
+- [x] **Backend Chunking API**: Create `/api/chunks` or `/api/pixels?bounds=...` to load only visible area.
+- [x] **Frontend Chunk Manager**: Implement `ChunkManager` to dynamically load/unload pixels.
+- [x] **Database Optimization**: Enable SQLite WAL mode & Add Indexes (x, y).
+- [ ] **(Optional) DB Migration**: Guide user to install PostgreSQL if SQLite limits are reached.
+
+# Advanced Rendering Optimization 🚀
+- [x] **Offscreen Canvas Caching**: Pre-render chunks to images to avoid `fillRect` loops.
+- [x] **Cluster Logic Separation**: Move `recalculateClusters` out of render loop; only run on data updates.
+- [x] **Text LOD**: Hide text at low zoom; optimize style changes.
+- [x] **Text LOD**: Hide text at low zoom; optimize style changes.
+- [x] **Strict Culling**: Prevent rendering logic for invisible chunks.
+- [x] **Debugging**: Fix Missing Content & Rendering Issues (Resolved blank canvas, transparent pixels, and data type errors).
+- [x] **Feature: Notice Modal**
+  - [x] Add Notice button to `index.html`.
+  - [x] Create Notice modal structure in `index.html`.
+  - [x] Implement toggle logic in `main.js`.
+- [ ] **Feature: Dynamic Pricing**
+  - [ ] Implement `getPixelPrice` in `server.js` and `main.js`.
+  - [ ] Update frontend to calculate total price during selection.
+  - [ ] Update backend to validate price during purchase (if applicable) or ensure correct amount is passed.
+  - [ ] Draw visual guide for high-value zones on canvas.
