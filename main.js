@@ -81,7 +81,6 @@ let isDrawing = false; // Throttling flag for draw()
 
 // Refactored: Fit to screen logic
 // Refactored: Fit to screen logic
-const MAX_GRID_START_COORD = WORLD_SIZE - GRID_SIZE;
 
 // --- Canvas Resizing Logic ---
 function resizeCanvas() {
