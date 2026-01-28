@@ -160,12 +160,6 @@ let lastTouchX = 0;
 let lastTouchY = 0;
 let lastPinchDistance = 0;
 
-// NEW: Mobile Touch Handling Variables
-let isMobileSelectMode = false;
-let lastTouchX = 0;
-let lastTouchY = 0;
-let lastPinchDistance = 0;
-
 // --- Idol Group Info ---
 const idolInfo = {
     // --- Gen 3 & Global Legends ---
