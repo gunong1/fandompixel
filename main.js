@@ -1264,13 +1264,15 @@ canvas.addEventListener('touchstart', (e) => {
             if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
 
             // Start Selection Logic (Simulate mousedown)
-            window.onmousedown({
-                clientX: touch.clientX,
-                clientY: touch.clientY,
-                target: canvas,
-                ctrlKey: false, // Force select mode
-                preventDefault: () => { }
-            });
+            if (canvas.onmousedown) {
+                canvas.onmousedown({
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    target: canvas,
+                    ctrlKey: false, // Force select mode
+                    preventDefault: () => { }
+                });
+            }
         }, LONG_PRESS_DURATION);
 
     } else if (e.touches.length === 2) {
