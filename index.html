@@ -141,10 +141,12 @@
                         프로세스</button>
                     <button class="notice-tab" data-target="tab-refund" data-i18n="modal.notice.tab_refund">환불
                         규정</button>
+                    <button class="notice-tab" data-target="tab-faq" data-i18n="modal.notice.faq.title">FAQ</button>
                 </div>
 
                 <!-- Tab 1: Intro -->
                 <div id="tab-intro" class="notice-content">
+                    <!-- ... existing intro ... -->
                     <p style="font-weight: bold; color: #00d4ff; margin-bottom: 15px; font-size: 1.1em; text-align: center;"
                         data-i18n="modal.notice.intro.headline">
                         "가장 넓은 땅을 차지한 팬덤의 이름으로<br>기부금이 전달됩니다"
@@ -162,6 +164,7 @@
 
                 <!-- Tab 2: Process -->
                 <div id="tab-process" class="notice-content" style="display: none;">
+                    <!-- ... existing process ... -->
                     <h3 style="color: #00d4ff; margin: 0 0 15px 0; font-size: 16px;"
                         data-i18n="modal.notice.process.title">📢 기부 진행 절차</h3>
 
@@ -220,6 +223,54 @@
                             본 서비스에서 구매하는 '픽셀'은 구매 즉시 영토 점유의 효력이 발생하는 디지털 자산입니다. 따라서 전자상거래 등에서의 소비자보호에 관한 법률 등 관련 법령에
                             의거하여,
                             구매 후 단순 변심에 의한 청약 철회 및 환불이 불가능합니다.</p>
+                    </div>
+                </div>
+
+                <!-- Tab 4: FAQ (NEW) -->
+                <div id="tab-faq" class="notice-content" style="display: none; height: 350px; overflow-y: auto;">
+                    <h3 style="color: #00d4ff; margin: 0 0 15px 0; font-size: 16px;" data-i18n="modal.notice.faq.title">
+                        ❓ 자주 묻는 질문</h3>
+
+                    <!-- Section 1 -->
+                    <strong style="color: #fff; display: block; margin: 15px 0 8px 0;"
+                        data-i18n="modal.notice.faq.sec_payment">1. 결제 관련</strong>
+                    <div style="margin-bottom: 10px;">
+                        <p style="color: #aaa; font-weight: bold; margin-bottom: 2px;"
+                            data-i18n="modal.notice.faq.common.q1">Q...</p>
+                        <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0;"
+                            data-i18n="modal.notice.faq.common.a1">A...</p>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <p style="color: #aaa; font-weight: bold; margin-bottom: 2px;"
+                            data-i18n="modal.notice.faq.common.q2">Q...</p>
+                        <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0;"
+                            data-i18n="modal.notice.faq.common.a2">A...</p>
+                    </div>
+
+                    <!-- Section 2 -->
+                    <strong style="color: #fff; display: block; margin: 15px 0 8px 0;"
+                        data-i18n="modal.notice.faq.sec_donation">2. 기부 관련</strong>
+                    <div style="margin-bottom: 10px;">
+                        <p style="color: #aaa; font-weight: bold; margin-bottom: 2px;"
+                            data-i18n="modal.notice.faq.common.q3">Q...</p>
+                        <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0;"
+                            data-i18n="modal.notice.faq.common.a3">A...</p>
+                    </div>
+
+                    <!-- Section 3 -->
+                    <strong style="color: #fff; display: block; margin: 15px 0 8px 0;"
+                        data-i18n="modal.notice.faq.sec_general">3. 서비스 이용 관련</strong>
+                    <div style="margin-bottom: 10px;">
+                        <p style="color: #aaa; font-weight: bold; margin-bottom: 2px;"
+                            data-i18n="modal.notice.faq.common.q4">Q...</p>
+                        <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0;"
+                            data-i18n="modal.notice.faq.common.a4">A...</p>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <p style="color: #aaa; font-weight: bold; margin-bottom: 2px;"
+                            data-i18n="modal.notice.faq.common.q5">Q...</p>
+                        <p style="color: #eee; font-size: 13px; line-height: 1.5; margin: 0;"
+                            data-i18n="modal.notice.faq.common.a5">A...</p>
                     </div>
                 </div>
             </div>
@@ -307,6 +358,10 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <script src="main.js?v=ticker_fix"></script>
+    <div id="site-footer"
+        style="position: fixed; bottom: 10px; width: 100%; text-align: center; color: rgba(255,255,255,0.3); font-size: 11px; pointer-events: none; z-index: 1000;">
+        Contact: kopick@fandompixer.com
+    </div>
 </body>
 
 </html>

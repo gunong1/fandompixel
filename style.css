@@ -542,12 +542,16 @@ h1 {
     background: none;
     border: none;
     color: #888;
-    padding: 10px 15px;
+    padding: 8px 10px;
+    /* Reduced from 10px 15px */
     cursor: pointer;
-    font-size: 14px;
+    font-size: 13px;
+    /* Reduced from 14px */
     font-weight: bold;
     border-bottom: 2px solid transparent;
     transition: all 0.3s;
+    white-space: nowrap;
+    /* Prevent wrapping */
 }
 
 .notice-tab:hover {

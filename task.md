@@ -71,5 +71,5 @@
 - [x] **Mobile UX Improvements**
   - [x] Prevent pixel click/selection during multi-touch (pinch/zoom).
   - [x] Increase maximum zoom-out range (lower minimum scale).
-- [x] **Fix: Minimap Indicator**
-  - [x] Use dynamic container size for minimap scale calculation.
+- [ ] **Feature: Contact Footer**
+  - [ ] Add contact email to site footer.

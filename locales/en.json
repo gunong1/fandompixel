@@ -63,6 +63,24 @@
                 "step5_title": "5. Artist Promotion",
                 "step5_desc": "News of the #1 Fandom's donation is distributed via Official Twitter (X) and press releases to spread the artist's positive image."
             },
+            "faq": {
+                "title": "❓ FAQ",
+                "common": {
+                    "q1": "Q: The pixel color didn't change after payment.",
+                    "a1": "A: It might be a temporary network delay. Please refresh the page (F5). If it's not updated after 5 minutes, send your payment ID to our support.",
+                    "q2": "Q: Can I pay with overseas cards (PayPal)?",
+                    "a2": "A: Yes, you can make payments from anywhere in the world via PayPal.",
+                    "q3": "Q: How is the donation used?",
+                    "a3": "A: A portion of the proceeds will be donated to an NGO under the name of the winning fandom. Details will be transparently shared on our SNS and Notice board.",
+                    "q4": "Q: How long do I own the pixels?",
+                    "a4": "A: Each pixel you purchase remains under your ownership for 30 days (one month) from the date of payment. You can repurchase after the period expires.",
+                    "q5": "Q: Can I change my nickname?",
+                    "a5": "A: Currently, nicknames are tied to your Google login. Please contact us if you need to change it."
+                },
+                "sec_payment": "1. Payment",
+                "sec_donation": "2. Donation",
+                "sec_general": "3. General"
+            },
             "refund": {
                 "title": "🚫 Refund Policy",
                 "desc_title": "Digital Asset Notice",
