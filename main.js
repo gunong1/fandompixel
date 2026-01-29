@@ -1,3 +1,86 @@
+// --- I18n Manager ---
+class I18n {
+    constructor() {
+        this.locale = 'ko'; // Default
+        this.messages = {};
+    }
+
+    async init() {
+        // Detect browser language or saved preference
+        const saved = localStorage.getItem('fp_lang');
+        if (saved) {
+            this.locale = saved;
+        } else {
+            const browserLang = navigator.language.slice(0, 2);
+            this.locale = browserLang === 'ko' ? 'ko' : 'en';
+        }
+        await this.loadLocale(this.locale);
+        this.updateUI();
+    }
+
+    async loadLocale(lang) {
+        try {
+            const response = await fetch(`./locales/${lang}.json`);
+            this.messages = await response.json();
+        } catch (e) {
+            console.error('Failed to load locale:', e);
+        }
+    }
+
+    async setLanguage(lang) {
+        this.locale = lang;
+        localStorage.setItem('fp_lang', lang);
+        await this.loadLocale(lang);
+        this.updateUI();
+    }
+
+    t(key, params = {}) {
+        const keys = key.split('.');
+        let value = this.messages;
+        for (const k of keys) {
+            value = value[k];
+            if (!value) return key;
+        }
+
+        // Simple interpolation
+        Object.keys(params).forEach(p => {
+            value = value.replace(`{${p}}`, params[p]);
+        });
+        return value;
+    }
+
+    updateUI() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.innerHTML = this.t(key);
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            el.placeholder = this.t(key);
+        });
+
+        // Update Switcher Text
+        const switcher = document.getElementById('current-lang');
+        if (switcher) switcher.innerText = this.locale.toUpperCase();
+    }
+}
+
+const i18n = new I18n();
+
+// Initialize I18n
+document.addEventListener('DOMContentLoaded', async () => {
+    await i18n.init();
+
+    // Language Switcher Event
+    const langBtn = document.getElementById('lang-switcher');
+    if (langBtn) {
+        langBtn.addEventListener('click', async () => {
+            const nextLang = i18n.locale === 'ko' ? 'en' : 'ko';
+            await i18n.setLanguage(nextLang);
+        });
+    }
+});
+
 const canvas = document.getElementById('pixelCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -177,6 +260,16 @@ const CHUNK_SIZE = 1000;
 let pixelChunks = new Map(); // Key: "chunkX,chunkY", Value: Set<Pixel>
 let chunkImages = new Map(); // Key: "chunkX,chunkY", Value: OffscreenCanvas | HTMLCanvasElement
 
+// Loading Indicator
+const loadingOverlay = document.getElementById('loading-overlay');
+function toggleLoading(show) {
+    if (loadingOverlay) {
+        loadingOverlay.style.display = show ? 'block' : 'none';
+        // Force redraw if hiding loading to ensure clean state
+        if (!show) draw();
+    }
+}
+
 class ChunkManager {
     constructor(chunkSize) {
         this.chunkSize = chunkSize;
@@ -184,7 +277,7 @@ class ChunkManager {
         this.pendingChunks = new Set();
         this.requestQueue = [];
         this.activeRequests = 0;
-        this.maxConcurrentRequests = 6; // Limit active requests to prevent ERR_INSUFFICIENT_RESOURCES
+        this.maxConcurrentRequests = 6;
     }
 
     update(minX, minY, maxX, maxY) {
@@ -222,7 +315,16 @@ class ChunkManager {
     }
 
     async processQueue() {
-        if (this.activeRequests >= this.maxConcurrentRequests || this.requestQueue.length === 0) return;
+        if (this.activeRequests >= this.maxConcurrentRequests || this.requestQueue.length === 0) {
+            // Check if idle
+            if (this.activeRequests === 0 && this.requestQueue.length === 0) {
+                toggleLoading(false);
+            }
+            return;
+        }
+
+        // Start Loading Logic
+        toggleLoading(true);
 
         while (this.activeRequests < this.maxConcurrentRequests && this.requestQueue.length > 0) {
             const task = this.requestQueue.shift();
@@ -240,29 +342,30 @@ class ChunkManager {
             const res = await fetch(`/api/pixels/chunk?minX=${minX}&minY=${minY}&maxX=${maxX}&maxY=${maxY}`);
             if (!res.ok) throw new Error(`Chunk ${key} fetch failed`);
             const pixels = await res.json();
-            // console.log(`[Chunk ${key}] Loaded ${pixels.length} pixels`);
 
-            pixels.forEach(p => {
+            if (pixels.length > 0) {
+                pixels.forEach(p => {
+                    try {
+                        p.x = Number(p.x);
+                        p.y = Number(p.y);
+                        updatePixelStore(p, false);
+                    } catch (err) { }
+                });
+
+                this.loadedChunks.add(key);
+
+                // Render to Offscreen Canvas Cache
                 try {
-                    p.x = Number(p.x);
-                    p.y = Number(p.y);
-                    updatePixelStore(p, false);
+                    this.renderChunkToCache(cx, cy);
                 } catch (err) {
-                    // console.error("Error processing pixel:", p, err);
+                    console.error("Error rendering chunk to cache:", key, err);
                 }
-            });
 
-            this.loadedChunks.add(key);
-
-            // Render to Offscreen Canvas Cache
-            try {
-                this.renderChunkToCache(cx, cy);
-            } catch (err) {
-                console.error("Error rendering chunk to cache:", key, err);
+                // Force draw to show progress
+                draw();
+            } else {
+                this.loadedChunks.add(key); // Mark empty chunk as loaded
             }
-
-            // Optional: progressive draw
-            // draw(); 
 
         } catch (e) {
             console.error("Chunk load error:", e);
@@ -284,7 +387,6 @@ class ChunkManager {
 
         let offCanvas = chunkImages.get(key);
         if (!offCanvas) {
-            // Force standard Canvas for debugging compatibility
             offCanvas = document.createElement('canvas');
             offCanvas.width = this.chunkSize;
             offCanvas.height = this.chunkSize;
@@ -296,8 +398,6 @@ class ChunkManager {
 
         const chunkMinX = cx * this.chunkSize;
         const chunkMinY = cy * this.chunkSize;
-
-        let drawnCount = 0;
 
         pixels.forEach(p => {
             if (p.x < chunkMinX || p.x >= chunkMinX + this.chunkSize ||
@@ -311,9 +411,7 @@ class ChunkManager {
             const groupInfo = idolInfo[p.idol_group_name] || { color: p.color || '#fff' };
             offCtx.fillStyle = groupInfo.color;
             offCtx.fillRect(localX, localY, GRID_SIZE, GRID_SIZE);
-            drawnCount++;
         });
-        // console.log(`[Chunk ${key}] cached ${drawnCount} pixels`);
     }
 
     invalidateChunk(cx, cy) {
@@ -1038,6 +1136,23 @@ window.onmouseup = (e) => {
 };
 
 
+// --- Pricing Logic ---
+function getPixelPrice(x, y) {
+    // Calculate distance from center
+    const centerX = WORLD_SIZE / 2;
+    const centerY = WORLD_SIZE / 2;
+    const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+
+    // Zone 1: High Value (Center +/- 2000px radius) - 2000 KRW
+    if (dist <= 2000) return 2000;
+
+    // Zone 2: Mid Value (Center +/- 12000px radius) - 1000 KRW
+    if (dist <= 12000) return 1000;
+
+    // Zone 3: Standard (Rest of the world) - 500 KRW
+    return 500;
+}
+
 function updateSidePanel(singleOwnedPixel = null) {
 
     // --- Implement Request 1: Data Filtering for selectedPixels ---
@@ -1075,8 +1190,21 @@ function updateSidePanel(singleOwnedPixel = null) {
             }
 
             // Calculate Total Price Dynamically
-            const totalPrice = unownedInSelection.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
-            areaIdText.innerText = `총 구독료: ₩ ${totalPrice.toLocaleString()}`;
+            const totalPriceKRW = unownedInSelection.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
+
+            // Currency Display Logic
+            const priceEl = document.getElementById('payment-info-price');
+            if (i18n.locale === 'en') {
+                // Approximate Rate: 1000 KRW = 1 USD (Simplification for UX)
+                // 500 KRW = 0.5 USD
+                // 2000 KRW = 2 USD
+                const totalPriceUSD = (totalPriceKRW / 1000).toFixed(2);
+                areaIdText.innerText = `Total Price: $ ${totalPriceUSD}`;
+                if (priceEl) priceEl.innerText = `$ ${totalPriceUSD}`;
+            } else {
+                areaIdText.innerText = `${i18n.t('sidebar.price_label')} ₩ ${totalPriceKRW.toLocaleString()}`;
+                if (priceEl) priceEl.innerText = `₩ ${totalPriceKRW.toLocaleString()}`;
+            }
         } else if (ownedInSelection.length > 0) { // All selected pixels are owned
             pixelInfo.style.display = 'block';
             statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
@@ -1152,7 +1280,7 @@ async function checkAuth() {
                 nicknameInput.value = currentUser.nickname;
                 nicknameInput.disabled = false;
                 nicknameInput.readOnly = true;
-                nicknameInput.placeholder = '닉네임';
+                nicknameInput.placeholder = i18n.t('purchase_form.nickname_placeholder');
                 nicknameInput.style.backgroundColor = '#333';
             }
         } else {
@@ -1212,22 +1340,50 @@ subscribeButton.onclick = async () => {
     try {
         console.log(`[PAYMENT] Requesting payment for ${pixelsToSend.length} pixels (Total: ₩${totalAmount})`);
 
-        // --- PORTONE V2 REQUEST ---
-        const response = await PortOne.requestPayment({
-            storeId: "store-81d6360b-5e80-4765-b7df-09333509eb04", // Updated from screenshot
-            channelKey: "channel-key-c55bfde2-056f-414f-b62c-cf4d2faddfdf",
+        // --- Payment Channel & Currency Logic ---
+        let finalAmount = totalAmount;
+        let finalCurrency = "KRW"; // Changed from CURRENCY_KRW
+        let targetChannelKey = "channel-key-c55bfde2-056f-414f-b62c-cf4d2faddfdf"; // Default: Toss (Domestic)
+
+        // Base Request Object
+        const paymentRequest = {
+            storeId: "store-81d6360b-5e80-4765-b7df-09333509eb04",
             paymentId: paymentId,
             orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
-            totalAmount: totalAmount,
-            currency: "CURRENCY_KRW",
-            payMethod: "CARD", // Default to card, user can change in UI if configured
             customer: {
                 fullName: nickname,
+                email: currentUser ? currentUser.email : undefined,
             },
-        });
+        };
+
+        if (i18n.locale === 'en') {
+            // USD Logic
+            // FIX: Updated Channel Key provided by user
+            finalAmount = Number((totalAmount / 1000).toFixed(2));
+
+            // Validation: PayPal often requires minimum $1.00
+            if (finalAmount < 1.00) {
+                alert("PayPal 결제는 최소 $1.00 부터 가능합니다.\n픽셀을 추가로 선택해주세요.");
+                return;
+            }
+
+            finalCurrency = "CURRENCY_USD";
+            targetChannelKey = "channel-key-1eb29f8d-3668-4489-b9b6-7ab82c4df49c"; // PayPal (Corrected Key)
+            paymentRequest.payMethod = "PAYPAL";
+        } else {
+            // KRW Logic
+            paymentRequest.payMethod = "CARD"; // Default for Toss
+        }
+
+        paymentRequest.channelKey = targetChannelKey;
+        paymentRequest.totalAmount = finalAmount;
+        paymentRequest.currency = finalCurrency;
+
+        // --- PORTONE V2 REQUEST ---
+        const response = await PortOne.requestPayment(paymentRequest);
 
         if (response.code !== undefined) {
-            // Payment Failed
+            // Payment Failed (Business Logic Failure)
             alert(`결제에 실패했습니다: ${response.message}`);
             return;
         }
@@ -1260,7 +1416,7 @@ subscribeButton.onclick = async () => {
         });
 
         // Use Batch Emit with Chunking
-        const CHUNK_SIZE = 2000;
+        const CHUNK_SIZE = 50000; // Increased to 50k (approx 6MB) - Server limit increased to 100MB
         const totalChunks = Math.ceil(pixelsPayload.length / CHUNK_SIZE);
 
         for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
@@ -1274,22 +1430,17 @@ subscribeButton.onclick = async () => {
         selectedPixels = [];
         draw();
 
-        // Calculate Center of Selection for Zoom
-        let sumX = 0, sumY = 0;
-        pixelsToSend.forEach(p => { sumX += p.x; sumY += p.y; });
-        const centerX = sumX / pixelsToSend.length;
-        const centerY = sumY / pixelsToSend.length;
-
         // Trigger Share Card
         setTimeout(() => {
-            generateShareCard(idolGroupName, pixelsToSend.length, color, centerX, centerY);
-        }, 500); // Small delay to let canvas redraw
+            generateShareCard(idolGroupName, pixelsToSend.length, color, pixelsToSend);
+        }, 500);
 
         // Trigger Ticker: Removed Local Trigger to avoid double notifications (Socket handles it)
 
     } catch (error) {
         console.error('[PAYMENT] Error:', error);
-        alert('결제 처리 중 도우미 오류가 발생했습니다.');
+        // Show detailed error message for easier debugging
+        alert(`결제 처리 중 오류가 발생했습니다: ${error.message || error}`);
     }
 };
 
@@ -1532,8 +1683,8 @@ setupShareHandlers();
 window.addEventListener('DOMContentLoaded', setupShareHandlers);
 window.addEventListener('load', setupShareHandlers);
 
-function generateShareCard(idolName, pixelCount, color, centerX, centerY) {
-    console.log(`[ShareCard] Generating for ${idolName}, count: ${pixelCount} at ${centerX},${centerY}`);
+function generateShareCard(idolName, pixelCount, baseColor, purchasedPixels) {
+    console.log(`[ShareCard] Generating for ${idolName}, count: ${pixelCount}, pixels: ${purchasedPixels ? purchasedPixels.length : 0}`);
 
     // Dynamic Retrieval to prevent null errors
     const shareModal = document.getElementById('share-modal');
@@ -1552,7 +1703,7 @@ function generateShareCard(idolName, pixelCount, color, centerX, centerY) {
     const ctx = offCanvas.getContext('2d');
 
     // 2. Draw Background
-    let baseColor = color || '#333';
+    baseColor = baseColor || '#333';
     ctx.fillStyle = '#1a1f2c';
     ctx.fillRect(0, 0, width, height);
 
@@ -1564,61 +1715,109 @@ function generateShareCard(idolName, pixelCount, color, centerX, centerY) {
     ctx.fillRect(0, 0, width, height);
     ctx.globalAlpha = 1.0;
 
-    // 3. Draw Map Snapshot (Zoomed In)
+    // 3. Draw Map Snapshot (Smart Zoom + Isolated View)
     const mapWidth = 560;
-    const mapHeight = 220; // Slightly shorter to make room for text
+    const mapHeight = 220;
     const mapX = 20;
-    const mapY = 100; // Moved down
+    const mapY = 100;
 
     ctx.save();
     ctx.beginPath();
-
     if (ctx.roundRect) {
         ctx.roundRect(mapX, mapY, mapWidth, mapHeight, 10);
     } else {
         ctx.rect(mapX, mapY, mapWidth, mapHeight);
     }
-
     ctx.clip();
 
-    // Draw white background
-    ctx.fillStyle = '#0a0f19';
+    // Draw Dark Background for Map Area
+    ctx.fillStyle = '#111';
     ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
 
-    // --- ZOOM LOGIC ---
-    // If we have a target center, we want to capture that area from the canvas
-    if (centerX !== undefined && centerY !== undefined) {
-        // Convert World Coord -> Screen Coord
-        // currentOffset & scale are global
-        const screenX = (centerX * scale) + offsetX;
-        const screenY = (centerY * scale) + offsetY;
+    // --- SMART ZOOM LOGIC ---
+    if (purchasedPixels && purchasedPixels.length > 0) {
+        // 1. Calculate Bounding Box of Purchased Pixels
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        purchasedPixels.forEach(p => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
 
-        // Visual Zoom Factor (Digital Zoom on the screenshot)
-        // If we want 2x zoom relative to current view: source w/h should be 1/2 of dest w/h
-        // But we are drawing to `mapWidth` x `mapHeight`.
-        // Let's grab a source box from the canvas that corresponds to the target area.
+        // 2. Add Padding (e.g., 50 units around)
+        // If single pixel, we want a nice zoom, not infinite.
+        const PADDING = 60;
+        minX -= PADDING;
+        minY -= PADDING;
+        maxX += PADDING;
+        maxY += PADDING;
 
-        // Dynamic Zoom: We want the purchased area to occupy a good chunk of the card.
-        // Let's say we want to show a 200x200 pixel area around the target (in screen pixels).
-        // But if the user is zoomed out, 200 screen pixels might be huge.
-        // Let's act like a magnifying glass: Capture a 300x150 box from screen around the center point.
-        // And draw it into the 560x220 box. This gives ~2x zoom.
+        const boxWidth = maxX - minX;
+        const boxHeight = maxY - minY;
 
-        const sourceW = mapWidth / 2.5; // Zoom Level (Smaller source = More Zoom)
-        const sourceH = mapHeight / 2.5;
+        // 3. Calculate Scale to Fit into Map Area
+        // Maintain Aspect Ratio, fit fully inside
+        const scaleX = mapWidth / boxWidth;
+        const scaleY = mapHeight / boxHeight;
+        const drawScale = Math.min(scaleX, scaleY); // How many CARD pixels per WORLD unit
 
-        const sourceX = screenX - (sourceW / 2);
-        const sourceY = screenY - (sourceH / 2);
+        // 4. Center the drawing
+        // offset inside the map rect
+        const drawOffsetX = (mapWidth - (boxWidth * drawScale)) / 2;
+        const drawOffsetY = (mapHeight - (boxHeight * drawScale)) / 2;
 
-        // Draw clipped image
-        ctx.drawImage(canvas, sourceX, sourceY, sourceW, sourceH, mapX, mapY, mapWidth, mapHeight);
+        // 5. Render FILTERED Pixels
+        // Logic: Scan all relevant pixels (could be slow if map is huge, but we can filter by range first?)
+        // Fast approach: Iterate ALL pixels in pixelMap, check if in range AND same group.
+        // Optimization: pixelMap has IDs as keys? No, it's Map<string_key, pixel_obj>
+        // World is max 60k x 60k? No, user said 10M pixels but sparsely populated.
+        // Iterating 2000 pixels is fast. Iterating 100k might lag for a ms. It's fine for a one-off card generation.
 
-        // Draw a marker at the center?
-        // ctx.strokeStyle = '#fff';
-        // ctx.strokeRect(mapX + mapWidth/2 - 10, mapY + mapHeight/2 - 10, 20, 20);
+        // Draw Grid (Optional, subtle)
+        // Draw Relevant Pixels
+
+        pixelMap.forEach(pixel => {
+            // Filter: Only draw if within our Viewport Box
+            if (pixel.x >= minX && pixel.x <= maxX && pixel.y >= minY && pixel.y <= maxY) {
+                // Filter: Only draw if SAME GROUP as purchased (or is the purchased pixel itself)
+                // This satisfies "Don't show other fandoms"
+                if (pixel.idol_group_name === idolName) {
+
+                    const screenX = mapX + drawOffsetX + (pixel.x - minX) * drawScale;
+                    const screenY = mapY + drawOffsetY + (pixel.y - minY) * drawScale;
+                    const size = GRID_SIZE * drawScale * (1 / GRID_SIZE); // Effectively drawScale? No.
+                    // GRID_SIZE in world is 20? Wait.
+                    // pixel.x are WORLD COORDINATES.
+                    // Wait, pixel.x is usually Grid Aligned? 
+                    // Let's assume pixel.x is top-left of the pixel.
+                    // And standard pixel size is 20?
+                    // In draw(), size is determined by scale. 
+                    // Here, 1 World Unit = drawScale Card Pixels?
+                    // If pixel.x are like 0, 20, 40...
+                    // Then width is 20 * drawScale?
+
+                    // Actually, let's look at `draw()`:
+                    // ctx.fillRect((pixel.x * scale) + offsetX, ...)
+                    // So pixel.x is coordinate. Width is GRID_SIZE (20).
+
+                    const rectSize = GRID_SIZE * (drawScale / 1); // Not quite.
+                    // drawScale is (CardPixels / WorldUnits).
+                    // So 20 WorldUnits = 20 * drawScale CardPixels.
+
+                    const pSize = 20 * drawScale;
+
+                    // Draw Pixel
+                    ctx.fillStyle = pixel.color || baseColor;
+                    // Fix small gaps with ceil or overlapping
+                    ctx.fillRect(screenX, screenY, pSize + 0.5, pSize + 0.5);
+                }
+            }
+        });
 
     } else {
-        // Fallback: Default full canvas copy
+        // Fallback if no specific pixels passed (e.g. initial view?)
+        // Just draw what was on canvas
         ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, mapX, mapY, mapWidth, mapHeight);
     }
 
@@ -1629,33 +1828,72 @@ function generateShareCard(idolName, pixelCount, color, centerX, centerY) {
     ctx.restore();
 
     // 4. Text Overlay (Refined Layout)
+    // 4. Text Overlay (Refined Layout)
     ctx.textAlign = 'left';
     ctx.fillStyle = '#ffffff';
 
-    // Line 1: Idol Name
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillStyle = baseColor; // Use idol color for name
-    ctx.fillText(`${idolName}`, 30, 50);
-    const nameWidth = ctx.measureText(`${idolName}`).width;
+    if (i18n.locale === 'en') {
+        // --- English Layout ---
+        // Line 1: "Extended {Idol}'s Territory"
+        ctx.font = 'bold 24px sans-serif'; // Slightly smaller to fit long names
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("Extended ", 30, 50);
+        const prefixWidth = ctx.measureText("Extended ").width;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`의 영토를`, 30 + nameWidth + 5, 50);
+        ctx.fillStyle = baseColor;
+        ctx.fillText(`${idolName}'s`, 30 + prefixWidth, 50);
+        const nameWidth = ctx.measureText(`${idolName}'s`).width;
 
-    // Line 2: Count and Message
-    ctx.font = 'bold 36px sans-serif';
-    ctx.fillStyle = '#00d4ff'; // Blue highlight
-    ctx.fillText(`${pixelCount} Px`, 30, 88);
-    const countWidth = ctx.measureText(`${pixelCount} Px`).width;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(" Territory", 30 + prefixWidth + nameWidth, 50);
 
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`만큼 더 넓혔습니다! 🚩`, 30 + countWidth + 10, 85);
+        // Line 2: "by {Count} Px! 🚩"
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("by ", 30, 88);
+        const byWidth = ctx.measureText("by ").width;
+
+        ctx.fillStyle = '#00d4ff'; // Blue highlight
+        ctx.fillText(`${pixelCount} Px`, 30 + byWidth, 88);
+        const countWidth = ctx.measureText(`${pixelCount} Px`).width;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("! 🚩", 30 + byWidth + countWidth, 88);
+
+    } else {
+        // --- Korean Layout (Original) ---
+        // Line 1: "{Idol} 의 영토를"
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = baseColor; // Use idol color for name
+        ctx.fillText(`${idolName}`, 30, 50);
+        const nameWidth = ctx.measureText(`${idolName}`).width;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`의 영토를`, 30 + nameWidth + 5, 50);
+
+        // Line 2: "{Count} Px 만큼 더 넓혔습니다! 🚩"
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = '#00d4ff'; // Blue highlight
+        ctx.fillText(`${pixelCount} Px`, 30, 88);
+        const countWidth = ctx.measureText(`${pixelCount} Px`).width;
+
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`만큼 더 넓혔습니다! 🚩`, 30 + countWidth + 10, 85);
+    }
 
     // Footer
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = '14px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('FANDOM PIXEL', width - 20, height - 15);
+
+    // Brand Name
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('FANDOM PIXEL', width - 20, height - 28);
+
+    // URL (New)
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('fandompixel.com', width - 20, height - 10);
 
     // 5. Output
     shareCardImg.src = offCanvas.toDataURL('image/png');
@@ -1687,19 +1925,28 @@ function showTickerMessage(data) {
         const [nickname, idolName] = key.split(':');
         const count = summary[key];
 
-        const item = document.createElement('div');
-        item.className = 'ticker-item';
-        // item.innerHTML = `<span class="ticker-highlight">${nickname}</span>님이 <span class="ticker-highlight">${idolName}</span>의 ${count}픽셀을 점령했습니다!`;
-        item.innerHTML = `
-            <span class="ticker-icon">🚩</span>
-            <span>방금 <b>${nickname}</b>님이 <b>${idolName}</b>의 <span class="ticker-highlight">${count}픽셀</span>을 점령했습니다!</span>
-        `;
+        const row = document.createElement('div');
+        row.style.background = 'rgba(0, 212, 255, 0.1)';
+        row.style.borderLeft = '3px solid #00d4ff';
+        row.style.padding = '8px 12px';
+        row.style.borderRadius = '4px';
+        row.style.color = '#fff';
+        row.style.fontSize = '14px';
+        row.style.textShadow = '0 1px 2px black';
+        row.style.animation = 'slideUpFade 5s forwards';
 
-        activityTicker.appendChild(item);
+        // Format: "Just now, [User] claimed [Count] pixels of [Idol]!"
+        const user = `<strong>${nickname}</strong>`;
+        const idol = `<strong>${idolName}</strong>`;
+        const formattedCount = `<strong>${count}</strong>`;
+
+        row.innerHTML = `${i18n.t('messages.ticker_prefix')} ${user}${i18n.t('messages.ticker_claimed')}${idol}${i18n.t('messages.ticker_pixels')}${formattedCount}${i18n.t('messages.ticker_suffix')}`;
+
+        activityTicker.appendChild(row);
 
         // Remove after animation (5s total: 0.4s slide + 4.1s wait + 0.5s fade)
         setTimeout(() => {
-            if (item.parentNode) item.parentNode.removeChild(item);
+            if (row.parentNode) row.parentNode.removeChild(row);
         }, 5000);
     });
 }

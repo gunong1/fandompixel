@@ -543,3 +543,12 @@ h1 {
 .notice-content {
     animation: fadeIn 0.3s ease-out;
 }
+
+/* --- Language Switcher --- */
+#lang-switcher {
+    transition: all 0.3s;
+}
+#lang-switcher:hover {
+    background: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}

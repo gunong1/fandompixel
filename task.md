@@ -35,3 +35,34 @@
   - [x] Reduce Long Press Duration to 0.15s.
 - [x] **UI: Sort Idol List**
   - [x] Sort dropdown alphabetically (ABC).
+- [x] **Feature: Purchase Share Card**
+  - [x] Add Share Modal to `index.html`.
+  - [x] Implement `generateShareCard` logic in `main.js` (Canvas Compostion).
+  - [x] Trigger on purchase success.
+- [x] **Feature: Activity Ticker**
+  - [x] Add Ticker UI to `index.html`.
+  - [x] Implement socket listener for `batch_pixel_update`.
+  - [x] Display real-time purchase alerts.
+- [x] **UI: Notice Modal Refactor**
+  - [x] Split into Tabs (Intro / Process).
+  - [x] Update Donation Process content.
+- [x] **Feature: Internationalization (i18n)**
+  - [x] Create `ko.json` and `en.json`.
+  - [x] Add Language Switcher to `index.html`.
+  - [x] Implement text replacement logic in `main.js`.
+  - [x] Apply localization to Share Card and Ticker.
+- [x] **Bug Fix: Pricing Logic**
+  - [x] Restore Dynamic Pricing (Center 2000 / Mid 1000 / Rest 500).
+  - [x] Support dual currency display (KRW/USD).
+- [x] **Configuration: Payment Channels**
+  - [x] Set up Toss Payments (KO) and PayPal (EN) channel keys.
+  - [x] Implement locale-based channel switching.
+  - [x] Fix PayPal Helper Error (Amount Type / Method).
+  - [x] **PayPal Fix**: Force Integer USD and Explicit PAYPAL method.
+- [x] **Feature: Refund Policy**
+  - [x] Add "Refund Policy" tab to Notice Modal.
+  - [x] Implement localization for Refund Policy (KO/EN).
+- [x] **Fix: Initial Rendering & UX**
+  - [x] Add "Loading Pixels..." indicator.
+  - [x] Force `draw()` after initial data load and `fitToScreen`.
+  - [x] Ensure viewport calculation works without user input.

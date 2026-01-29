@@ -10,7 +10,13 @@ app.set('trust proxy', 1);
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins (or restrict to your domain)
+        methods: ["GET", "POST"]
+    },
+    maxHttpBufferSize: 1e8 // 100 MB
+});
 
 const port = process.env.PORT || 3000;
 const db = new Database('database.db');

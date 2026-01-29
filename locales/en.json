@@ -1,0 +1,107 @@
+{
+    "header": {
+        "title": "FANDOM PIXEL",
+        "subtitle": "10,000,000 PIXELS GLOBAL STAGE",
+        "login": "Google Login",
+        "logout": "Logout",
+        "history": "📜 History"
+    },
+    "sidebar": {
+        "status_available": "Available",
+        "status_occupied": "Occupied",
+        "owner": "Owner",
+        "idol": "Idol",
+        "none": "None",
+        "description": "Subscribe to this pixel to claim territory for your artist.",
+        "label_nickname": "Nickname",
+        "placeholder_nickname": "Login Required",
+        "label_group": "Group",
+        "price_label": "Price:",
+        "btn_subscribe": "Subscribe Pixel"
+    },
+    "ranking": {
+        "title": "🏆 Fandom Ranking",
+        "loading": "Loading..."
+    },
+    "modal": {
+        "share": {
+            "title": "🎉 Territory Extended!",
+            "desc": "Save the card below to show off your fandom!",
+            "btn_download": "💾 Save Image",
+            "btn_close": "Close"
+        },
+        "history": {
+            "title": "📜 My Activity",
+            "col_date": "Date",
+            "col_group": "Group",
+            "col_count": "Count",
+            "col_expiry": "Expiry",
+            "empty": "No purchase history."
+        },
+        "notice": {
+            "title": "📢 Notice",
+            "tab_intro": "Project Info",
+            "tab_process": "Donation Process",
+            "tab_refund": "Refund Policy",
+            "intro": {
+                "headline": "\"Donations will be made in the name of the<br>#1 Fandom with the largest territory\"",
+                "subline": "FANDOM PIXEL is a global donation project<br>created by fandoms worldwide.",
+                "point1": "A portion of pixel sales proceeds is accumulated as donations.",
+                "point2": "At the end of each season, a donation is made in the name of the<br>#1 Fandom that occupied the most territory.",
+                "point3": "Shine your fandom and share your warm heart!"
+            },
+            "process": {
+                "title": "📢 Donation Process",
+                "step1_title": "1. Donor Name",
+                "step1_desc": "Donated in the name of the #1 Fandom in market share at season end.",
+                "step2_title": "2. Amount Calculation",
+                "step2_desc": "A certain percentage of proceeds (excluding fees) is automatically accumulated.",
+                "step3_title": "3. Beneficiary",
+                "step3_desc": "Donated to themes selected each season (e.g., Children in Crisis, Environmental Protection) via reputable foundations.",
+                "step4_title": "4. Result Reporting",
+                "step4_desc": "Donation receipts and certificates are transparently released via Official SNS within 7 days of completion.",
+                "step5_title": "5. Artist Promotion",
+                "step5_desc": "News of the #1 Fandom's donation is distributed via Official Twitter (X) and press releases to spread the artist's positive image."
+            },
+            "refund": {
+                "title": "🚫 Refund Policy",
+                "desc_title": "Digital Asset Notice",
+                "desc_text": "Pixels purchased in this service are digital assets that take effect immediately upon purchase. Therefore, in accordance with relevant laws on consumer protection in e-commerce, withdrawal of subscription or refunds due to simple change of mind after purchase is not possible."
+            },
+            "btn_close": "Close"
+        },
+        "help": {
+            "title": "How to Use",
+            "zoom": "Zoom In/Out",
+            "move": "Move Canvas",
+            "center": "Center View",
+            "select": "Select Pixel",
+            "multi_select": "Multi-select",
+            "desc_zoom": "Mouse Wheel",
+            "desc_move": "Ctrl + Drag",
+            "desc_center": "Spacebar",
+            "desc_select": "Click",
+            "desc_multi_select": "Drag",
+            "close": "Close"
+        }
+    },
+    "statusbar": {
+        "notice": "📢 Notice",
+        "help": "[F1] Help"
+    },
+    "messages": {
+        "login_required": "Login is required.",
+        "payment_success": "Purchase Successful!",
+        "payment_failed": "Payment Failed.",
+        "select_pixels": "Please select pixels first.",
+        "pixel_occupied": "Selected area includes occupied pixels.",
+        "ticker_prefix": "Just now,",
+        "ticker_claimed": " claimed ",
+        "ticker_pixels": " pixels of ",
+        "ticker_suffix": "!"
+    },
+    "share_card": {
+        "territory_of": "'s Territory",
+        "expanded_by": " Extended! 🚩"
+    }
+}

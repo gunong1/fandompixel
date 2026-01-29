@@ -1,0 +1,107 @@
+{
+    "header": {
+        "title": "FANDOM PIXEL",
+        "subtitle": "10,000,000 PIXELS GLOBAL STAGE",
+        "login": "Google 로그인",
+        "logout": "로그아웃",
+        "history": "📜 내역"
+    },
+    "sidebar": {
+        "status_available": "구독 가능",
+        "status_occupied": "점령됨",
+        "owner": "소유자",
+        "idol": "아이돌",
+        "none": "없음",
+        "description": "이 픽셀을 구독하여 당신의 아티스트를 위한 영토로 선포하세요.",
+        "label_nickname": "닉네임",
+        "placeholder_nickname": "로그인이 필요합니다",
+        "label_group": "그룹",
+        "price_label": "결제 금액:",
+        "btn_subscribe": "픽셀 구독하기"
+    },
+    "ranking": {
+        "title": "🏆 Fandom Ranking",
+        "loading": "랭킹 로딩중..."
+    },
+    "modal": {
+        "share": {
+            "title": "🎉 영토 확장 성공!",
+            "desc": "아래 카드를 저장하여 팬덤을 자랑하세요!",
+            "btn_download": "💾 이미지 저장",
+            "btn_close": "닫기"
+        },
+        "history": {
+            "title": "📜 내 활동 내역",
+            "col_date": "구매일",
+            "col_group": "그룹",
+            "col_count": "개수",
+            "col_expiry": "만료일",
+            "empty": "구매 내역이 없습니다."
+        },
+        "notice": {
+            "title": "📢 공지사항",
+            "tab_intro": "프로젝트 안내",
+            "tab_process": "기부 프로세스",
+            "tab_refund": "환불 규정",
+            "intro": {
+                "headline": "\"가장 넓은 땅을 차지한 팬덤의 이름으로<br>기부금이 전달됩니다\"",
+                "subline": "FANDOM PIXEL은 전 세계 팬덤이 함께 만드는<br>글로벌 기부 프로젝트입니다.",
+                "point1": "픽셀 구매 수익금의 일부는 기부금으로 적립됩니다.",
+                "point2": "매 시즌 종료 시, 가장 많은 영토를 점령한<br>1위 팬덤의 명의로 기부가 진행됩니다.",
+                "point3": "여러분의 팬덤을 빛내고 따뜻한 마음을 전하세요!"
+            },
+            "process": {
+                "title": "📢 기부 진행 절차",
+                "step1_title": "1. 기부 주체",
+                "step1_desc": "매 시즌 종료 시점 점유율 1위 팬덤의 이름으로 기부됩니다.",
+                "step2_title": "2. 기부금 산정",
+                "step2_desc": "픽셀 구매 총액에서 결제 수수료를 제외한 수익금의 일정 비율이 기부금으로 자동 적립됩니다.",
+                "step3_title": "3. 기부처",
+                "step3_desc": "공신력 있는 복지 재단을 통해 [위기 아동 지원/환경 보호] 등 매 시즌 선정된 테마에 기부됩니다.",
+                "step4_title": "4. 결과 보고",
+                "step4_desc": "기부 완료 후 7일 이내에, 공식 SNS를 통해 기부 영수증과 증서를 투명하게 공개합니다.",
+                "step5_title": "5. 아티스트 홍보",
+                "step5_desc": "1위 팬덤의 기부 소식은 공식 트위터(X) 및 보도자료를 통해 배포되어 아티스트의 긍정적인 이미지를 전파합니다."
+            },
+            "refund": {
+                "title": "🚫 환불 불가 안내",
+                "desc_title": "디지털 자산 특성 안내",
+                "desc_text": "본 서비스에서 구매하는 '픽셀'은 구매 즉시 영토 점유의 효력이 발생하는 디지털 자산입니다. 따라서 전자상거래 등에서의 소비자보호에 관한 법률 등 관련 법령에 의거하여, 구매 후 단순 변심에 의한 청약 철회 및 환불이 불가능합니다."
+            },
+            "btn_close": "닫기"
+        },
+        "help": {
+            "title": "사용 방법",
+            "zoom": "캔버스 확대/축소",
+            "move": "캔버스 이동",
+            "center": "화면 중앙 정렬",
+            "select": "픽셀 선택",
+            "multi_select": "다중 픽셀 선택",
+            "desc_zoom": "마우스 휠",
+            "desc_move": "Ctrl + 드래그",
+            "desc_center": "스페이스바",
+            "desc_select": "마우스 클릭",
+            "desc_multi_select": "마우스 드래그",
+            "close": "닫기"
+        }
+    },
+    "statusbar": {
+        "notice": "📢 공지",
+        "help": "[F1] 도움말"
+    },
+    "messages": {
+        "login_required": "로그인이 필요합니다.",
+        "payment_success": "구매가 완료되었습니다!",
+        "payment_failed": "결제에 실패했습니다.",
+        "select_pixels": "먼저 픽셀을 선택해주세요.",
+        "pixel_occupied": "이미 점령된 픽셀이 포함되어 있습니다.",
+        "ticker_prefix": "방금",
+        "ticker_claimed": "님이",
+        "ticker_pixels": "의",
+        "ticker_suffix": "픽셀을 점령했습니다!"
+    },
+    "share_card": {
+        "territory_of": "의 영토를",
+        "expanded_by": "만큼 더 넓혔습니다! 🚩"
+    }
+}
