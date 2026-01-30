@@ -51,7 +51,16 @@
   - [x] Add Language Switcher to `index.html`.
   - [x] Implement text replacement logic in `main.js`.
   - [x] Apply localization to Share Card and Ticker.
-- [x] **Bug Fix: Pricing Logic**
+- [x] **Optimization: Rendering & Data**
+  - [x] Implement Offscreen Canvas for static drawing.
+  - [x] Apply Integer Coordinates (Math.round) in draw loop.
+  - [x] Optimize Data Fetching (AbortController, Cache).
+- [x] **Diagnostic: FPS Meter**
+  - [x] Add real-time FPS display to client.
+  - [x] (Revert) Remove FPS meter as per request.
+- [x] **Optimization: Data & Network**
+  - [x] Implement Binary Protocol for pixel chunks (Buffer vs JSON).
+  - [x] (Revert) Remove LOD Thumbnail due to blocking UX.
   - [x] Restore Dynamic Pricing (Center 2000 / Mid 1000 / Rest 500).
   - [x] Support dual currency display (KRW/USD).
 - [x] **Configuration: Payment Channels**
@@ -71,5 +80,5 @@
 - [x] **Mobile UX Improvements**
   - [x] Prevent pixel click/selection during multi-touch (pinch/zoom).
   - [x] Increase maximum zoom-out range (lower minimum scale).
-- [ ] **Feature: Contact Footer**
-  - [ ] Add contact email to site footer.
+- [x] **Feature: Contact Footer**
+  - [x] Add contact email to site footer.

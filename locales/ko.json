@@ -17,7 +17,12 @@
         "placeholder_nickname": "로그인이 필요합니다",
         "label_group": "그룹",
         "price_label": "결제 금액:",
-        "btn_subscribe": "픽셀 구독하기"
+        "total_subscription_fee": "총 구독료",
+        "btn_subscribe": "픽셀 구독하기",
+        "area_selected": "영역 선택됨",
+        "owner_stats": "보유 정보",
+        "status_mixed": "{count}개 선택됨 ({owned}개 보유중)",
+        "owner_stats_value": "{count}개 ({percent}%)"
     },
     "ranking": {
         "title": "🏆 Fandom<br>Ranking",
@@ -48,7 +53,13 @@
                 "subline": "FANDOM PIXEL은 전 세계 팬덤이 함께 만드는<br>글로벌 기부 프로젝트입니다.",
                 "point1": "픽셀 구매 수익금의 일부는 기부금으로 적립됩니다.",
                 "point2": "매 시즌 종료 시, 가장 많은 영토를 점령한<br>1위 팬덤의 명의로 기부가 진행됩니다.",
-                "point3": "여러분의 팬덤을 빛내고 따뜻한 마음을 전하세요!"
+                "point3": "여러분의 팬덤을 빛내고 따뜻한 마음을 전하세요!",
+                "season_info": {
+                    "title": "📢 시즌제 안내",
+                    "duration": "시즌 기간: 3개월 (연 4회 진행)",
+                    "desc1": "시즌 종료 시점의 랭킹과 영토는 '명예의 전당'에 영구 박제됩니다.",
+                    "desc2": "새로운 시즌이 시작되면 맵은 초기화되지만, 여러분의 기록은 영원히 남습니다."
+                }
             },
             "process": {
                 "title": "📢 기부 진행 절차",
@@ -113,6 +124,7 @@
         "payment_failed": "결제에 실패했습니다.",
         "select_pixels": "먼저 픽셀을 선택해주세요.",
         "pixel_occupied": "이미 점령된 픽셀이 포함되어 있습니다.",
+        "select_pixels_count": "{count}개 픽셀 선택됨",
         "ticker_prefix": "방금",
         "ticker_claimed": "님이",
         "ticker_pixels": "의",

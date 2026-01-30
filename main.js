@@ -19,11 +19,103 @@ class I18n {
     }
 
     async loadLocale(lang) {
+        // 1. Define Robust Defaults (Fallback)
+        const defaults = {
+            "header": { "title": "FANDOM PIXEL", "subtitle": "10,000,000 PIXELS GLOBAL STAGE", "login": "Google Login", "logout": "Logout", "history": "📜 History" },
+            "sidebar": { "status_available": "Available", "status_occupied": "Occupied", "owner": "Owner", "idol": "Idol", "none": "None", "description": "Subscribe to this pixel to claim territory for your artist.", "label_nickname": "Nickname", "placeholder_nickname": "Login Required", "label_group": "Group", "price_label": "Price:", "total_subscription_fee": "Total Subscription Fee", "btn_subscribe": "Subscribe Pixel", "area_selected": "Area Selected" },
+            "ranking": { "title": "🏆 Fandom<br>Ranking", "loading": "Loading..." },
+            "statusbar": { "notice": "📢 Notice", "help": "[F1] Help" },
+            "messages": { "payment_success": "Purchase Successful!", "login_required": "Login required", "select_pixels": "Select pixels first", "pixel_occupied": "Occupied pixels selected" },
+            "modal": {
+                "share": { "title": "Territory Extended!", "desc": "Save this card to show off!", "btn_download": "💾 Save Image", "btn_close": "Close" },
+                "history": { "title": "My Activity", "col_date": "Date", "col_group": "Group", "col_count": "Count", "col_expiry": "Expiry", "empty": "No history found." },
+                "help": { "title": "How to Use", "zoom": "Zoom In/Out", "move": "Move Canvas", "center": "Center View", "select": "Select Pixel", "multi_select": "Multi-select", "desc_zoom": "Mouse Wheel", "desc_move": "Ctrl + Drag", "desc_center": "Spacebar", "desc_select": "Click", "desc_multi_select": "Drag", "close": "Close" },
+                "notice": {
+                    "title": "📢 Notice",
+                    "tab_intro": "Project Info",
+                    "tab_process": "Donation Process",
+                    "tab_refund": "Refund Policy",
+                    "tab_faq": "FAQ",
+                    "intro": {
+                        "headline": "Donation Project",
+                        "subline": "Global Fandom Project",
+                        "point1": "A portion of pixel sales proceeds is accumulated as donations.",
+                        "point2": "At the end of each season, a donation is made in the name of the #1 Fandom.",
+                        "point3": "Shine your fandom and share your warm heart!",
+                        "season_info": {
+                            "title": "📢 Season Info",
+                            "duration": "Duration: 3 Months (4 Seasons/Year)",
+                            "desc1": "At the end of the season, ranking and territory are permanently archived in the Hall of Fame.",
+                            "desc2": "The map resets when a new season starts, but your records remain forever."
+                        }
+                    },
+                    "process": { "title": "Donation Process", "step1_title": "1. Donor Name", "step1_desc": "Donated in the name of the #1 Fandom.", "step2_title": "2. Amount Calculation", "step2_desc": "Percentage of proceeds accumulated.", "step3_title": "3. Beneficiary", "step3_desc": "Donated to themes selected each season.", "step4_title": "4. Result Reporting", "step4_desc": "Receipts released via SNS.", "step5_title": "5. Artist Promotion", "step5_desc": "News distributed via Twitter/Press." },
+                    "refund": { "title": "Refund Policy", "desc_title": "Digital Asset Notice", "desc_text": "No refunds due to digital asset nature." },
+                    "faq": { "title": "❓ FAQ", "common": { "q1": "Q: Color didn't change?", "a1": "A: Refresh (F5).", "q2": "Q: PayPal?", "a2": "A: Yes.", "q3": "Q: Usage?", "a3": "A: Donated.", "q4": "Q: Ownership?", "a4": "A: 30 days.", "q5": "Q: Nickname?", "a5": "A: Fixed to Google." }, "sec_payment": "1. Payment", "sec_donation": "2. Donation", "sec_general": "3. General" }
+                }
+            }
+        };
+
+        if (lang === 'ko') {
+            // Apply Korean overrides to defaults
+            defaults.header = { "title": "FANDOM PIXEL", "subtitle": "10,000,000 PIXELS GLOBAL STAGE", "login": "Google 로그인", "logout": "로그아웃", "history": "📜 내역" };
+            defaults.sidebar = { "status_available": "구독 가능", "status_occupied": "점령됨", "owner": "소유자", "idol": "아이돌", "none": "없음", "description": "이 픽셀을 구독하여 당신의 아티스트를 위한 영토로 선포하세요.", "label_nickname": "닉네임", "placeholder_nickname": "로그인이 필요합니다", "label_group": "그룹", "price_label": "결제 금액:", "total_subscription_fee": "총 구독료", "btn_subscribe": "픽셀 구독하기" };
+            defaults.ranking = { "title": "🏆 Fandom<br>Ranking", "loading": "랭킹 로딩중..." };
+            defaults.statusbar = { "notice": "📢 공지", "help": "[F1] 도움말" };
+            defaults.messages = { "payment_success": "구매가 완료되었습니다!", "login_required": "로그인이 필요합니다.", "select_pixels": "먼저 픽셀을 선택해주세요.", "pixel_occupied": "이미 점령된 픽셀이 포함되어 있습니다." };
+            defaults.modal.share = { "title": "🎉 영토 확장 성공!", "desc": "아래 카드를 저장하여 팬덤을 자랑하세요!", "btn_download": "💾 이미지 저장", "btn_close": "닫기" };
+            defaults.modal.history = { "title": "📜 내 활동 내역", "col_date": "구매일", "col_group": "그룹", "col_count": "개수", "col_expiry": "만료일", "empty": "구매 내역이 없습니다." };
+            defaults.modal.help = { "title": "사용 방법", "zoom": "캔버스 확대/축소", "move": "캔버스 이동", "center": "화면 중앙 정렬", "select": "픽셀 선택", "multi_select": "다중 픽셀 선택", "desc_zoom": "마우스 휠", "desc_move": "Ctrl + 드래그", "desc_center": "스페이스바", "desc_select": "마우스 클릭", "desc_multi_select": "마우스 드래그", "close": "닫기" };
+
+            // Notice Section Overrides for KO
+            defaults.modal.notice.title = "📢 공지사항";
+            defaults.modal.notice.tab_intro = "프로젝트 안내";
+            defaults.modal.notice.tab_process = "기부 프로세스";
+            defaults.modal.notice.tab_refund = "환불 규정";
+            defaults.modal.notice.tab_faq = "FAQ";
+            defaults.modal.notice.intro = {
+                "headline": "\"가장 넓은 땅을 차지한 팬덤의 이름으로<br>기부금이 전달됩니다\"",
+                "subline": "FANDOM PIXEL은 전 세계 팬덤이 함께 만드는<br>글로벌 기부 프로젝트입니다.",
+                "point1": "픽셀 구매 수익금의 일부는 기부금으로 적립됩니다.",
+                "point2": "매 시즌 종료 시, 가장 많은 영토를 점령한<br>1위 팬덤의 명의로 기부가 진행됩니다.",
+                "point3": "여러분의 팬덤을 빛내고 따뜻한 마음을 전하세요!",
+                "season_info": {
+                    "title": "📢 시즌제 안내",
+                    "duration": "시즌 기간: 3개월 (연 4회 진행)",
+                    "desc1": "시즌 종료 시점의 랭킹과 영토는 '명예의 전당'에 영구 박제됩니다.",
+                    "desc2": "새로운 시즌이 시작되면 맵은 초기화되지만, 여러분의 기록은 영원히 남습니다."
+                }
+            };
+            // Add process/refund overrides if needed, but intro.season_info is the critical one missing.
+        }
+
         try {
-            const response = await fetch(`./locales/${lang}.json`);
-            this.messages = await response.json();
+            console.log(`[I18n] Loading ${lang}...`);
+            this.messages = JSON.parse(JSON.stringify(defaults)); // Initialize with defaults
+
+            const response = await fetch(`./locales/${lang}.json?v=${Date.now()}`);
+            if (response.ok) {
+                const fetched = await response.json();
+                // Merge Logic: Overwrite defaults with fetched data
+                // BUT if fetched data is missing keys (e.g. stale cache), keep default.
+                // Simple recursive merge can be done here? 
+                // Alternatively, just trust fetch for top levels, but patch specific nested ones known to be issues.
+
+                this.messages = fetched;
+
+                // FORCE PATCHING nested Season Info if missing in fetched
+                if (!this.messages.modal?.notice?.intro?.season_info) {
+                    if (!this.messages.modal) this.messages.modal = {};
+                    if (!this.messages.modal.notice) this.messages.modal.notice = {};
+                    if (!this.messages.modal.notice.intro) this.messages.modal.notice.intro = {};
+                    this.messages.modal.notice.intro.season_info = defaults.modal.notice.intro.season_info;
+                    console.warn(`[I18n] Patched missing season_info for ${lang}`);
+                }
+            }
+            console.log(`[I18n] Loaded ${lang} success`);
         } catch (e) {
             console.error('Failed to load locale:', e);
+            // this.messages is already set to defaults above
         }
     }
 
@@ -37,14 +129,24 @@ class I18n {
     t(key, params = {}) {
         const keys = key.split('.');
         let value = this.messages;
+
+        // Fallback for Critical UI Elements if loading failed or key missing
+        if (!value || Object.keys(value).length === 0 || !value[keys[0]]) {
+            if (key === 'statusbar.notice') return this.locale === 'ko' ? '📢 공지' : '📢 Notice';
+            if (key === 'statusbar.help') return this.locale === 'ko' ? '[F1] 도움말' : '[F1] Help';
+            if (key === 'header.title') return "FANDOM PIXEL";
+        }
+
         for (const k of keys) {
-            value = value[k];
+            value = value ? value[k] : undefined;
             if (!value) return key;
         }
 
         // Simple interpolation
         Object.keys(params).forEach(p => {
-            value = value.replace(`{${p}}`, params[p]);
+            if (typeof value === 'string') {
+                value = value.replace(`{${p}}`, params[p]);
+            }
         });
         return value;
     }
@@ -278,146 +380,191 @@ class ChunkManager {
         this.requestQueue = [];
         this.activeRequests = 0;
         this.maxConcurrentRequests = 6;
+        this.controllers = new Map(); // Store AbortControllers
     }
 
-    update(minX, minY, maxX, maxY) {
-        const startCx = Math.floor(minX / this.chunkSize);
-        const endCx = Math.ceil(maxX / this.chunkSize);
-        const startCy = Math.floor(minY / this.chunkSize);
-        const endCy = Math.ceil(maxY / this.chunkSize);
+    // --- Tile Map Service Implementation ---
+    // Instead of rendering pixels to an offscreen canvas, we load PNG tiles from the server.
+    // We only fetch binary pixel data if the user is zoomed in enough to interact.
 
-        for (let cx = startCx; cx <= endCx; cx++) {
-            for (let cy = startCy; cy <= endCy; cy++) {
-                this.loadChunk(cx, cy);
+    updateVisibleChunks(minX, minY, maxX, maxY) {
+        // TILE_SIZE = 256 world units
+        const TILE_SIZE = 256;
+
+        // Convert world bounds to tile coordinates
+        const minTileX = Math.floor(minX / TILE_SIZE);
+        const minTileY = Math.floor(minY / TILE_SIZE);
+        const maxTileX = Math.floor(maxX / TILE_SIZE);
+        const maxTileY = Math.floor(maxY / TILE_SIZE);
+
+        const currentTiles = new Set();
+
+        // Determine Load Mode: Image (Tiles) vs Data (Binary)
+        // If scale is large enough (e.g., > 1.0, meaning 1px >= 1 screen px), load data for interaction.
+        // Actually, users might want to see who owns a pixel even at lower zoom. 
+        // Let's set a threshold. scale=0.5 means 1 pixel = 0.5 screen pixels.
+        const LOAD_DATA_THRESHOLD = 0; // Force always load
+        const shouldLoadData = scale >= LOAD_DATA_THRESHOLD;
+
+        const totalTiles = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+
+        // --- SAFETY LIMIT ---
+        // If zooming out too much, user would request 60,000+ tiles.
+        // We limit visible tiles to ~150. If more, we stop rendering or render a placeholder.
+        if (totalTiles > 200) {
+            // console.warn("[TMS] Too many tiles visible, skipping render for performance.");
+            return;
+        }
+
+        for (let y = minTileY; y <= maxTileY; y++) {
+            for (let x = minTileX; x <= maxTileX; x++) {
+                const key = `${x},${y}`;
+                currentTiles.add(key);
+
+                // 1. Load Tile Image (Always, for base layer)
+                if (!this.loadedChunks.has(key) && !this.pendingChunks.has(key)) {
+                    this.pendingChunks.add(key);
+                    // Load Image
+                    const img = new Image();
+                    img.src = `/api/pixels/tile?x=${x}&y=${y}&t=${Date.now()}`; // Add timestamp to bypass cache if needed, or rely on Cache-Control
+                    img.onload = () => {
+                        chunkImages.set(key, img); // caching image directly
+                        this.loadedChunks.add(key);
+                        this.pendingChunks.delete(key);
+                        needsRedraw = true;
+                    };
+                    img.onerror = () => {
+                        this.pendingChunks.delete(key);
+                        // Retry?
+                    };
+                }
+
+                // 2. Load Binary Data (Only if high zoom) for interaction info
+                if (shouldLoadData) {
+                    const dataKey = `data_${key}`;
+                    if (!pixelChunks.has(key) && !this.pendingChunks.has(dataKey)) {
+                        this.pendingChunks.add(dataKey);
+                        // Fetch Data
+                        // We can reuse fetchChunk but need to adapt it to tile coordinates
+                        // TILE_SIZE (256) != Old Chunk Size (1000). 
+                        // The server /api/pixels/chunk expects minX, maxX etc.
+                        const dMinX = x * TILE_SIZE;
+                        const dMinY = y * TILE_SIZE;
+                        const dMaxX = dMinX + TILE_SIZE;
+                        const dMaxY = dMinY + TILE_SIZE;
+
+                        this.fetchChunkData(x, y, dMinX, dMinY, dMaxX, dMaxY, dataKey);
+                    }
+                }
+            }
+        }
+
+        // Cleanup Off-screen Tiles (Optional, for memory)
+        // ... (Keep existing cleanup logic if desired, adapted for images)
+    }
+
+    async fetchChunkData(tx, ty, minX, minY, maxX, maxY, key) {
+        // Optimized JSON Fetching
+        const controller = new AbortController();
+        this.controllers.set(key, controller);
+
+        try {
+            const res = await fetch(`/api/pixels/chunk?minX=${minX}&minY=${minY}&maxX=${maxX}&maxY=${maxY}&format=json&t=${Date.now()}`, {
+                signal: controller.signal
+            });
+            if (!res.ok) throw new Error("Data fetch failed");
+
+            const pixels = await res.json();
+
+            if (pixels && pixels.length > 0) {
+                // console.log(`[DATA] Loaded ${pixels.length} pixels for tile ${tx},${ty}`);
+                pixels.forEach(p => {
+                    const pKey = `${p.x},${p.y}`;
+                    pixelMap.set(pKey, p);
+                });
+                needsRedraw = true; // Force redraw after loading
+            }
+
+            // Mark data as loaded for this tile
+            // Also store count or some meta if needed
+            pixelChunks.set(`${tx},${ty}`, true);
+
+        } catch (e) {
+            if (e.name === 'AbortError') {
+                // console.log(`Chunk ${key} load aborted`);
+            } else {
+                console.error("Chunk data load error:", e);
+            }
+        } finally {
+            this.pendingChunks.delete(key);
+            this.controllers.delete(key);
+        }
+    }
+
+    invalidateChunk(cx, cy) {
+        // Fix: Map CHUNK_SIZE (1000) coordinates to TILE_SIZE (256) keys
+        // to correctly invalidate the visual tiles.
+
+        const cSize = this.chunkSize || 1000;
+        const TILE_SIZE = 256; // Redefine TILE_SIZE locally for this method
+        const minX = cx * cSize;
+        const minY = cy * cSize;
+        const maxX = minX + cSize;
+        const maxY = minY + cSize;
+
+        const tMinX = Math.floor(minX / TILE_SIZE);
+        const tMinY = Math.floor(minY / TILE_SIZE);
+        const tMaxX = Math.ceil(maxX / TILE_SIZE);
+        const tMaxY = Math.ceil(maxY / TILE_SIZE);
+
+        for (let y = tMinY; y <= tMaxY; y++) {
+            for (let x = tMinX; x <= tMaxX; x++) {
+                const key = `${x},${y}`;
+                this.loadedChunks.delete(key);
+
+                // Clear Image Cache
+                if (typeof chunkImages !== 'undefined' && chunkImages.has(key)) {
+                    chunkImages.delete(key);
+                }
+
+                // Clear Data Load Status
+                if (typeof pixelChunks !== 'undefined' && pixelChunks.has(key)) {
+                    // pixelChunks stores data loading status (boolean) for tiles
+                    // clearing it forces re-fetch of binary data if needed
+                    pixelChunks.delete(key);
+                }
             }
         }
     }
 
-    loadChunk(cx, cy) {
-        const key = `${cx},${cy}`;
-        if (this.loadedChunks.has(key) || this.pendingChunks.has(key)) return;
-
-        this.pendingChunks.add(key);
-        const minX = cx * this.chunkSize;
-        const minY = cy * this.chunkSize;
-        const maxX = minX + this.chunkSize;
-        const maxY = minY + this.chunkSize;
-
-        if (maxX < 0 || minX > WORLD_SIZE || maxY < 0 || minY > WORLD_SIZE) {
-            this.loadedChunks.add(key);
-            this.pendingChunks.delete(key);
-            return;
-        }
-
-        // Add to queue
-        this.requestQueue.push({ cx, cy, minX, minY, maxX, maxY, key });
-        this.processQueue();
-    }
-
     async processQueue() {
         if (this.activeRequests >= this.maxConcurrentRequests || this.requestQueue.length === 0) {
-            // Check if idle
             if (this.activeRequests === 0 && this.requestQueue.length === 0) {
                 toggleLoading(false);
             }
             return;
         }
 
-        // Start Loading Logic
-        toggleLoading(true);
-
         while (this.activeRequests < this.maxConcurrentRequests && this.requestQueue.length > 0) {
-            const task = this.requestQueue.shift();
-            this.activeRequests++;
-
-            this.fetchChunk(task).finally(() => {
-                this.activeRequests--;
-                this.processQueue();
-            });
+            const req = this.requestQueue.shift();
+            // Since we switched to tile images, the old loadChunk logic is obsolete.
+            // We keep this method structure to avoid breakage if anything calls it,
         }
-    }
-
-    async fetchChunk({ cx, cy, minX, minY, maxX, maxY, key }) {
-        try {
-            const res = await fetch(`/api/pixels/chunk?minX=${minX}&minY=${minY}&maxX=${maxX}&maxY=${maxY}`);
-            if (!res.ok) throw new Error(`Chunk ${key} fetch failed`);
-            const pixels = await res.json();
-
-            if (pixels.length > 0) {
-                pixels.forEach(p => {
-                    try {
-                        p.x = Number(p.x);
-                        p.y = Number(p.y);
-                        updatePixelStore(p, false);
-                    } catch (err) { }
-                });
-
-                this.loadedChunks.add(key);
-
-                // Render to Offscreen Canvas Cache
-                try {
-                    this.renderChunkToCache(cx, cy);
-                } catch (err) {
-                    console.error("Error rendering chunk to cache:", key, err);
-                }
-
-                // Force draw to show progress
-                draw();
-            } else {
-                this.loadedChunks.add(key); // Mark empty chunk as loaded
-            }
-
-        } catch (e) {
-            console.error("Chunk load error:", e);
-            this.loadedChunks.delete(key); // Retry allowed
-        } finally {
-            this.pendingChunks.delete(key);
-        }
-    }
-
-    renderChunkToCache(cx, cy) {
-        const key = `${cx},${cy}`;
-        if (!pixelChunks.has(key)) return;
-
-        const pixels = pixelChunks.get(key);
-        if (pixels.size === 0 && chunkImages.has(key)) {
-            chunkImages.delete(key);
-            return;
-        }
-
-        let offCanvas = chunkImages.get(key);
-        if (!offCanvas) {
-            offCanvas = document.createElement('canvas');
-            offCanvas.width = this.chunkSize;
-            offCanvas.height = this.chunkSize;
-            chunkImages.set(key, offCanvas);
-        }
-
-        const offCtx = offCanvas.getContext('2d');
-        offCtx.clearRect(0, 0, this.chunkSize, this.chunkSize);
-
-        const chunkMinX = cx * this.chunkSize;
-        const chunkMinY = cy * this.chunkSize;
-
-        pixels.forEach(p => {
-            if (p.x < chunkMinX || p.x >= chunkMinX + this.chunkSize ||
-                p.y < chunkMinY || p.y >= chunkMinY + this.chunkSize) {
-                return;
-            }
-
-            const localX = p.x - chunkMinX;
-            const localY = p.y - chunkMinY;
-
-            const groupInfo = idolInfo[p.idol_group_name] || { color: p.color || '#fff' };
-            offCtx.fillStyle = groupInfo.color;
-            offCtx.fillRect(localX, localY, GRID_SIZE, GRID_SIZE);
-        });
-    }
-
-    invalidateChunk(cx, cy) {
-        this.renderChunkToCache(cx, cy);
     }
 }
+
+// Socket Connection (Already declared below but we ensure singleton)
+// const socket = io(); // REMOVED DUPLICATE
+
+// End of ChunkManager class (Already closed above)
+
+
+// Ensure the socket is available (it's declared at top, but just in case)
+// ...
+// End of redundant duplication
+// The ChunkManager instance is created at the bottom of the file or after the original class definition.
+// End of redundant duplication cleaned up.
+
 const chunkManager = new ChunkManager(CHUNK_SIZE); // Ensure global instance uses correct chunk size
 
 
@@ -580,7 +727,8 @@ function _render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
 
     ctx.save();
-    ctx.translate(offsetX, offsetY);
+    // OPTIMIZATION: Integer coordinates for sharper rendering and performance
+    ctx.translate(Math.round(offsetX), Math.round(offsetY));
     ctx.scale(scale, scale);
 
     // Background
@@ -610,8 +758,14 @@ function _render() {
     const minVisibleY = -offsetY / scale - VIEWPORT_MARGIN;
     const maxVisibleY = (canvas.height - offsetY) / scale + VIEWPORT_MARGIN;
 
-    // Trigger Loads
-    chunkManager.update(minVisibleX, minVisibleY, maxVisibleX, maxVisibleY);
+    // Draw World Border
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 10 / scale;
+    ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+
+    // Trigger Loads (Only if zoomed in)
+    chunkManager.updateVisibleChunks(minVisibleX, minVisibleY, maxVisibleX, maxVisibleY);
 
     // Draw Grid (Limit to viewport, Fade out logic)
     if (scale > 0.05) {
@@ -648,32 +802,88 @@ function _render() {
     // Disable image smoothing for crisp pixels
     ctx.imageSmoothingEnabled = false;
 
-    for (let cx = startChunkX; cx <= endChunkX; cx++) {
-        for (let cy = startChunkY; cy <= endChunkY; cy++) {
-            const key = `${cx},${cy}`;
+    // --- Draw Tile Images ---
+    // Iterate over visible tiles
+    const TILE_SIZE = 256;
+    const viewMinX = minVisibleX; // Use the already calculated minVisibleX/Y
+    const viewMinY = minVisibleY;
+    const viewMaxX = maxVisibleX;
+    const viewMaxY = maxVisibleY;
 
-            // DEBUG: Blue Border for LOADED chunks (Removed)
-            /* if (chunkManager.loadedChunks.has(key)) {
-               // ...
-            } */
+    const startTileX = Math.floor(viewMinX / TILE_SIZE);
+    const startTileY = Math.floor(viewMinY / TILE_SIZE);
+    const endTileX = Math.floor(viewMaxX / TILE_SIZE);
+    const endTileY = Math.floor(viewMaxY / TILE_SIZE);
 
-            const chunkImg = chunkImages.get(key);
+    for (let ty = startTileY; ty <= endTileY; ty++) {
+        for (let tx = startTileX; tx <= endTileX; tx++) {
+            const key = `${tx},${ty}`;
+            const img = chunkImages.get(key);
+            if (img && img.complete) {
+                // Determine destination on canvas
+                // World coordinates of tile:
+                const wX = tx * TILE_SIZE;
+                const wY = ty * TILE_SIZE;
 
-            if (chunkImg) {
-                // Determine render position of this chunk
-                const drawX = cx * CHUNK_SIZE;
-                const drawY = cy * CHUNK_SIZE;
+                // Screen coordinates
+                // Note: p.x * GRID_SIZE? No. TILE_SIZE=256 is correct if 1 world unit = 1 pixel.
+                // But earlier we saw `const chunkMinX = cx * this.chunkSize`.
+                // wait, if TILE_SIZE=256, and we draw it.
+                // Does 1 unit in X mean 20 pixels on screen?
+                // The GRID_SIZE is 20.
+                // If the DB x is 0, drawing at screen x = 0.
+                // If DB x is 1, drawing at screen x = 20.
+                // So the *World Coordinate System* used in Logic is `x * GRID_SIZE`.
 
-                // Draw the cached image
-                ctx.drawImage(chunkImg, drawX, drawY);
+                // If the server generated a 256x256 PNG for x=0..256, y=0..256 range.
+                // That cover 256 "cells".
+                // On canvas, that covers 256 * GRID_SIZE pixels.
 
-                // DEBUG: Draw Chunk Borders (Removed)
-                /* ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-                   // ...
-                */
+                const screenX = (wX * GRID_SIZE * scale) + offsetX;
+                const screenY = (wY * GRID_SIZE * scale) + offsetY;
+                const screenW = TILE_SIZE * GRID_SIZE * scale;
+                const screenH = TILE_SIZE * GRID_SIZE * scale;
+
+                // Optimization: Don't draw if off-screen (handled by loop indices mostly)
+                // Draw Image
+                // We must use `imageSmoothingEnabled = false` for pixel art look
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(img, screenX, screenY, screenW, screenH);
             }
         }
     }
+
+
+    // --- Draw Live Pixels (Direct Map Iteration) ---
+    // FIX: Reset transform so manual screen coordinate calcs work correctly (Absolute Screen Space)
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    let debugCount = 0;
+    pixelMap.forEach(p => {
+        // Simple View Culling
+        if (p.x >= viewMinX && p.x <= viewMaxX && p.y >= viewMinY && p.y <= viewMaxY) {
+
+            if (debugCount < 3) {
+                // Throttle log to once per 5 seconds or just rely on manual refresh
+                // console.log(`[DRAW] Pixel ${p.x},${p.y} ${p.color}`); 
+                debugCount++;
+            }
+
+            // Fix: p.x/y are already world coordinates, do NOT multiply by GRID_SIZE again.
+            const pScreenX = (p.x * scale) + offsetX;
+            const pScreenY = (p.y * scale) + offsetY;
+
+            // Fix: Enforce minimum visibility size when zoomed out
+            // If scale is small, 1px is invisible. Force minimum size.
+            let pSize = Math.ceil(GRID_SIZE * scale);
+            if (pSize < 3) pSize = 3; // Minimum 3px dot
+
+            ctx.fillStyle = p.color;
+            ctx.fillRect(pScreenX, pScreenY, pSize, pSize);
+        }
+    });
+    ctx.restore();
 
     // --- RENDER CLUSTER LABELS (LOD) ---
     // Only render text if zoomed in enough (relaxed threshold)
@@ -773,6 +983,7 @@ function _render() {
         ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
     }
 
+
     ctx.restore();
     updateMinimap();
 }
@@ -854,8 +1065,34 @@ function updatePixelStore(pixel, redraw = true) {
 // We NO LONGER fetch all pixels. 
 // Pixels will be loaded by auto-pan/render loop or initial draw.
 
+// --- Initial Load Strategy (Hybrid) ---
+async function fetchAllPixels() {
+    try {
+        toggleLoading(true);
+        console.log('[Data] Fetching all pixels for initial view...');
+        const res = await fetch('/api/pixels?t=' + Date.now());
+        if (!res.ok) throw new Error('Failed to fetch initial pixels');
+        const pixels = await res.json();
+
+        console.log(`[Data] Loaded ${pixels.length} pixels.`);
+        pixels.forEach(p => {
+            updatePixelStore(p, false); // Store without individual redraws
+        });
+
+        needsRedraw = true;
+        draw();
+    } catch (e) {
+        console.error("Initial load failed:", e);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+// Start
+fetchAllPixels();
 updateRankingBoard();
-draw(); // This will trigger _render -> chunkManager.update -> API call
+draw(); // This will trigger _render
+
 
 socket.on('pixel_update', (pixel) => {
     updatePixelStore(pixel);
@@ -864,23 +1101,35 @@ socket.on('pixel_update', (pixel) => {
     if (selectedPixels.length === 1 && selectedPixels[0].x === pixel.x && selectedPixels[0].y === pixel.y) {
         updateSidePanel(pixel);
     }
-
-    // Simple redraw
-    draw();
 });
 
-// NEW: Batch Update Listener
 socket.on('batch_pixel_update', (pixels) => {
-    console.log(`Received batch update for ${pixels.length} pixels`);
+    const affectedChunks = new Set();
 
-    pixels.forEach(pixel => {
-        updatePixelStore(pixel);
+    // Optimization: Batch update without redundant redraws
+    pixels.forEach(p => {
+        updatePixelStore(p, false);
+        // Track chunk to invalidate
+        const k = getChunkKey(p.x, p.y);
+        affectedChunks.add(k);
     });
 
-    recalculateClusters(); // Batch updates might change clusters significantly, so we might want to force it or stick to throttle
-    requestClusterUpdate();
+    // Invalidate affected chunks so they redraw from data
+    affectedChunks.forEach(key => {
+        const [cx, cy] = key.split(',').map(Number);
+        chunkManager.invalidateChunk(cx, cy);
+    });
+
+    needsRedraw = true;
     draw();
 });
+
+// Simple redraw
+draw();
+
+
+// NEW: Batch Update Listener
+// (Removed duplicate batch_pixel_update listener)
 
 
 // --- User Interactions (Dragging and Selecting) ---
@@ -1138,15 +1387,17 @@ window.onmouseup = (e) => {
 
 // --- Pricing Logic ---
 function getPixelPrice(x, y) {
-    // Calculate distance from center
+    // Calculate distance from center (Square / Chebyshev Distance for Grid)
     const centerX = WORLD_SIZE / 2;
     const centerY = WORLD_SIZE / 2;
-    const dist = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
 
-    // Zone 1: High Value (Center +/- 2000px radius) - 2000 KRW
+    // Use Box Radius instead of Circle Radius
+    const dist = Math.max(Math.abs(x - centerX), Math.abs(y - centerY));
+
+    // Zone 1: High Value (Center +/- 2000px box) - 2000 KRW
     if (dist <= 2000) return 2000;
 
-    // Zone 2: Mid Value (Center +/- 12000px radius) - 1000 KRW
+    // Zone 2: Mid Value (Center +/- 12000px box) - 1000 KRW
     if (dist <= 12000) return 1000;
 
     // Zone 3: Standard (Rest of the world) - 500 KRW
@@ -1168,7 +1419,7 @@ function updateSidePanel(singleOwnedPixel = null) {
     if (ownerStatsDiv) ownerStatsDiv.style.display = 'none';
 
     if (totalSelected > 0) {
-        selectedPixelCountDiv.textContent = `총 ${totalSelected} 픽셀 선택됨`;
+        selectedPixelCountDiv.textContent = i18n.t('messages.select_pixels_count', { count: totalSelected }) || `Total ${totalSelected} pixels selected`;
         selectedPixelCountDiv.style.display = 'block';
 
         // OPTIMIZATION: fast check using Map.has() O(1)
@@ -1182,36 +1433,115 @@ function updateSidePanel(singleOwnedPixel = null) {
         if (unownedInSelection.length > 0) { // There are unowned pixels
             purchaseForm.style.display = 'block';
             if (ownedInSelection.length > 0) {
-                statusTag.textContent = `${unownedInSelection.length} 픽셀 구매 가능 (${unownedInSelection.length}개 소유됨)`;
+                statusTag.textContent = i18n.t('sidebar.status_mixed', { count: unownedInSelection.length, owned: ownedInSelection.length }) || `${unownedInSelection.length} available (${ownedInSelection.length} owned)`;
                 statusTag.style.background = '#ff9800'; // Orange for mixed
             } else {
-                areaIdText.innerText = `총 ${totalSelected} 픽셀 선택됨`;
+                // NEW: Show Total Subscription Fee instead of traditional Area ID
+                const unitPrice = getPixelPrice(selectedPixels[0].x, selectedPixels[0].y);
+                const titleKey = i18n.t('sidebar.total_subscription_fee');
+
+                if (i18n.locale === 'en') {
+                    const usdPrice = (unitPrice / 1000).toFixed(2);
+                    areaIdText.innerHTML = `${titleKey}: <br>$ ${usdPrice}`;
+                } else {
+                    areaIdText.innerHTML = `${titleKey}: <br>₩ ${unitPrice.toLocaleString()}`;
+                }
+
+                statusTag.textContent = i18n.t('sidebar.status_available');
                 statusTag.style.background = '#00d4ff'; // Blue for all unowned
             }
 
-            // Calculate Total Price Dynamically
-            const totalPriceKRW = unownedInSelection.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
+            // Calculate Price
+            let startPrice = 0;
+            if (totalSelected === 1) {
+                startPrice = getPixelPrice(validSelectedPixels[0].x, validSelectedPixels[0].y);
+            } else {
+                // If multiple selected, sum up prices
+                startPrice = validSelectedPixels.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
+            }
 
-            // Currency Display Logic
+            // Update header and price label with correct currency
+            const titleKey = i18n.t('sidebar.total_subscription_fee') || 'Total Fee';
+            const priceLabel = document.querySelector('label[for="idol-select"]');
+            const pixelPriceSpan = document.getElementById('pixel-price');
+
+            if (i18n.locale === 'en') {
+                const usdPrice = (startPrice / 1000).toFixed(2);
+                if (totalSelected > 1) {
+                    areaIdText.innerHTML = `${titleKey}: <br>$ ${usdPrice}`;
+                }
+                if (pixelPriceSpan) {
+                    pixelPriceSpan.textContent = `$${usdPrice}`;
+                }
+            } else {
+                if (totalSelected > 1) {
+                    areaIdText.innerHTML = `${titleKey}: <br>₩ ${startPrice.toLocaleString()}`;
+                }
+                if (pixelPriceSpan) {
+                    pixelPriceSpan.textContent = `₩${startPrice.toLocaleString()}`;
+                }
+            }
+
+            // Original price display logic for unowned pixels (kept for now, but might be redundant with new price display)
+            const totalPriceKRW = unownedInSelection.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
             const priceEl = document.getElementById('payment-info-price');
             if (i18n.locale === 'en') {
-                // Approximate Rate: 1000 KRW = 1 USD (Simplification for UX)
-                // 500 KRW = 0.5 USD
-                // 2000 KRW = 2 USD
                 const totalPriceUSD = (totalPriceKRW / 1000).toFixed(2);
-                areaIdText.innerText = `Total Price: $ ${totalPriceUSD}`;
                 if (priceEl) priceEl.innerText = `$ ${totalPriceUSD}`;
             } else {
-                areaIdText.innerText = `${i18n.t('sidebar.price_label')} ₩ ${totalPriceKRW.toLocaleString()}`;
                 if (priceEl) priceEl.innerText = `₩ ${totalPriceKRW.toLocaleString()}`;
             }
-        } else if (ownedInSelection.length > 0) { // All selected pixels are owned
+
+        } else if (totalSelected === 1 && ownedInSelection.length === 1) {
+            // Single Owned Pixel
             pixelInfo.style.display = 'block';
-            statusTag.textContent = '선택된 모든 픽셀은 이미 소유자 있음';
+            statusTag.textContent = i18n.t('sidebar.status_occupied');
+            statusTag.style.background = '#ff0055';
+
+            const p = ownedInSelection[0];
+            // Standardize Header to match "Area Selected" style requested by user
+            areaIdText.innerText = i18n.t('sidebar.area_selected');
+
+            ownerNickname.innerText = p.owner_nickname || i18n.t('sidebar.none');
+            const groupName = p.idol_group_name || i18n.t('sidebar.none');
+
+            // Fix: Ensure idolGroup element is updated
+            if (idolGroup) {
+                idolGroup.innerText = groupName;
+                idolGroup.style.color = (idolInfo[groupName] && idolInfo[groupName].color) ? idolInfo[groupName].color : '#fff';
+            }
+
+            // Show Owner Stats (Standardized)
+            if (ownerStatsDiv) {
+                const owner = p.owner_nickname;
+                const group = p.idol_group_name;
+
+                if (owner && group) {
+                    const userGroupKey = `${owner}:${group}`;
+                    const ownerCount = userGroupPixelCounts.get(userGroupKey) || 0;
+                    const totalWorldPixels = Math.pow(Math.floor(WORLD_SIZE / GRID_SIZE), 2);
+                    const marketShare = ((ownerCount / totalWorldPixels) * 100).toFixed(4);
+
+                    const statsLabel = i18n.t('sidebar.owner_stats') || "Ownership Info";
+                    const statsValue = i18n.t('sidebar.owner_stats_value', {
+                        count: ownerCount.toLocaleString(),
+                        percent: marketShare
+                    });
+
+                    ownerStatsDiv.innerHTML = `<span>${statsLabel}</span> <span>${statsValue}</span>`;
+                    ownerStatsDiv.style.display = 'flex';
+                } else {
+                    ownerStatsDiv.style.display = 'none';
+                }
+            }
+
+        } else if (ownedInSelection.length > 0) { // All selected pixels are owned (multiple pixels)
+            pixelInfo.style.display = 'block';
+            statusTag.textContent = i18n.t('sidebar.status_occupied');
             statusTag.style.background = '#ff4d4d'; // Red for all owned
             ownerNickname.textContent = '-';
             idolGroup.textContent = '-';
-            areaIdText.innerText = `총 ${totalSelected}개의 소유된 픽셀`;
+            areaIdText.innerText = i18n.t('messages.selected_owned_pixels', { count: totalSelected });
 
             // Refactored: Display owner info if exactly one owner is found across all selected pixels
             // 1. Get unique owners
@@ -1222,12 +1552,8 @@ function updateSidePanel(singleOwnedPixel = null) {
                 ownerNickname.textContent = samplePixel.owner_nickname;
                 idolGroup.textContent = samplePixel.idol_group_name;
 
-                // If only one pixel selected, show specific area ID, otherwise show 'Multi-Select'
-                if (ownedInSelection.length === 1) {
-                    areaIdText.innerText = `Area #${samplePixel.x / GRID_SIZE}-${samplePixel.y / GRID_SIZE}`;
-                } else {
-                    areaIdText.innerText = `영역 선택됨`;
-                }
+                // Always show "Area Selected" for consistency as requested
+                areaIdText.innerText = i18n.t('sidebar.area_selected');
 
                 // --- NEW: Calculate and Show Owner Stats (Specific to Group) ---
                 // const ownerCount = userPixelCounts.get(samplePixel.owner_nickname) || 0; // OLD: Global count
@@ -1241,7 +1567,15 @@ function updateSidePanel(singleOwnedPixel = null) {
                 const marketShare = ((ownerCount / totalWorldPixels) * 100).toFixed(4); // Show 4 decimal places for precision
 
                 if (ownerStatsDiv) {
-                    ownerStatsDiv.innerHTML = `<span>보유 정보</span> <span>${ownerCount.toLocaleString()}개 (${marketShare}%)</span>`;
+                    const statsLabel = i18n.t('sidebar.owner_stats') || "Ownership Info";
+                    // Pass raw numbers if i18n handles formatting, or formatted strings if placeholders expect string.
+                    // Given our JSON uses {percent}%, we pass the number string.
+                    const statsValue = i18n.t('sidebar.owner_stats_value', {
+                        count: ownerCount.toLocaleString(),
+                        percent: marketShare
+                    }) || `${ownerCount.toLocaleString()} (${marketShare}%)`;
+
+                    ownerStatsDiv.innerHTML = `<span>${statsLabel}</span> <span>${statsValue}</span>`;
                     ownerStatsDiv.style.display = 'flex';
                 }
             } else if (uniqueOwners.length > 1) {
@@ -1308,36 +1642,44 @@ async function checkAuth() {
 checkAuth();
 
 subscribeButton.onclick = async () => {
-    let nickname = nicknameInput.value.trim();
-    if (currentUser) {
-        nickname = currentUser.nickname;
-    }
-
-    const idolGroupName = idolSelect.value;
-
-    if (!nickname) {
-        alert('닉네임을 입력해주세요 (로그인이 필요할 수 있습니다).');
-        return;
-    }
-    if (selectedPixels.length === 0) {
-        alert('선택된 픽셀이 없습니다.');
-        return;
-    }
-
-    const pixelsToSend = selectedPixels.filter(p =>
-        p.x >= 0 && p.x < WORLD_SIZE - EPSILON && p.y >= 0 && p.y < WORLD_SIZE - EPSILON &&
-        !pixelMap.has(`${p.x},${p.y}`)
-    );
-
-    if (pixelsToSend.length === 0) {
-        alert('구매 가능한 픽셀이 없습니다. (모두 소유됨 혹은 범위 밖)');
-        return;
-    }
-
-    const totalAmount = pixelsToSend.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
-    const paymentId = `payment-${Math.random().toString(36).slice(2, 11)}`;
-
     try {
+        console.log('[DEBUG] Purchase button clicked start');
+
+        // --- Validation ---
+        let nickname = nicknameInput.value.trim();
+        if (currentUser) {
+            nickname = currentUser.nickname;
+        }
+
+        const idolGroupName = idolSelect.value;
+
+        if (!nickname) {
+            alert('닉네임을 입력해주세요 (로그인이 필요할 수 있습니다).');
+            return;
+        }
+        if (selectedPixels.length === 0) {
+            alert('선택된 픽셀이 없습니다.');
+            return;
+        }
+
+        const pixelsToSend = selectedPixels.filter(p =>
+            p.x >= 0 && p.x < WORLD_SIZE - EPSILON && p.y >= 0 && p.y < WORLD_SIZE - EPSILON &&
+            !pixelMap.has(`${p.x},${p.y}`)
+        );
+
+        if (pixelsToSend.length === 0) {
+            alert('구매 가능한 픽셀이 없습니다. (모두 소유됨 혹은 범위 밖)');
+            return;
+        }
+
+        // --- SDK Check ---
+        if (typeof PortOne === 'undefined') {
+            throw new Error("결제 모듈(PortOne)이 로드되지 않았습니다. 페이지를 새로고침 해주세요.");
+        }
+
+        const totalAmount = pixelsToSend.reduce((sum, p) => sum + getPixelPrice(p.x, p.y), 0);
+        const paymentId = `payment-${Math.random().toString(36).slice(2, 11)}`;
+
         console.log(`[PAYMENT] Requesting payment for ${pixelsToSend.length} pixels (Total: ₩${totalAmount})`);
 
         // --- Payment Channel & Currency Logic ---
@@ -1354,46 +1696,57 @@ subscribeButton.onclick = async () => {
                 fullName: nickname,
                 email: currentUser ? currentUser.email : undefined,
             },
+            // Note: totalAmount is set below
         };
 
         if (i18n.locale === 'en') {
-            // USD Logic
-            // FIX: Updated Channel Key provided by user
-            finalAmount = Number((totalAmount / 1000).toFixed(2));
+            // USD Logic (PayPal)
+            const exchangeRate = 1000;
+            // Fix: PortOne PayPal integration seems to interpret integer '1' as '1 cent' ($0.01).
+            // We need to send correct CENTS value.
+            let usdDollars = totalAmount / exchangeRate;
+            let usdCents = Math.round(usdDollars * 100);
 
-            // Validation: PayPal often requires minimum $1.00
-            if (finalAmount < 1.00) {
-                alert("PayPal 결제는 최소 $1.00 부터 가능합니다.\n픽셀을 추가로 선택해주세요.");
-                return;
-            }
+            // Enforce Minimum $0.01 (1 Cent)
+            if (usdCents < 1) usdCents = 1;
 
-            finalCurrency = "CURRENCY_USD";
-            targetChannelKey = "channel-key-1eb29f8d-3668-4489-b9b6-7ab82c4df49c"; // PayPal (Corrected Key)
+            finalAmount = usdCents;
+
+            finalCurrency = "USD";
+            targetChannelKey = "channel-key-1eb29f8d-3668-4489-b9b6-7ab82c4df49c"; // PayPal (Restored Correct Key)
+
+            paymentRequest.totalAmount = finalAmount;
+            paymentRequest.currency = "USD";
+            paymentRequest.channelKey = targetChannelKey;
             paymentRequest.payMethod = "PAYPAL";
         } else {
-            // KRW Logic
-            paymentRequest.payMethod = "CARD"; // Default for Toss
+            // KRW Logic (Toss)
+            finalAmount = totalAmount;
+            finalCurrency = "KRW";
+            targetChannelKey = "channel-key-c55bfde2-056f-414f-b62c-cf4d2faddfdf"; // Toss
+
+            paymentRequest.totalAmount = finalAmount;
+            paymentRequest.currency = "KRW";
+            paymentRequest.channelKey = targetChannelKey;
+            paymentRequest.payMethod = "CARD";
         }
 
-        paymentRequest.channelKey = targetChannelKey;
-        paymentRequest.totalAmount = finalAmount;
-        paymentRequest.currency = finalCurrency;
 
-        // --- PORTONE V2 REQUEST ---
+        console.log(`[PAYMENT] Mode: ${i18n.locale}, Channel: ${targetChannelKey}, Amount: ${finalAmount} ${finalCurrency}`);
+
+        // --- Request Payment ---
         const response = await PortOne.requestPayment(paymentRequest);
 
         if (response.code !== undefined) {
-            // Payment Failed (Business Logic Failure)
-            alert(`결제에 실패했습니다: ${response.message}`);
-            return;
+            console.error("Payment failed:", response); // Log full response for debugging
+            return alert(`결제 실패: ${response.message}`);
         }
 
-        console.log(`[PAYMENT] Success! Payment ID: ${response.paymentId}`);
-        // Proceed with database update
-        const pixelsPayload = [];
+        // --- Payment Success Logic ---
+        console.log("Payment Success! Updating pixels...");
 
-        // Generate color dynamically if not in idolInfo
-        let color = '';
+        // Generate Color
+        let color = '#ffffff';
         if (idolInfo[idolGroupName]) {
             color = idolInfo[idolGroupName].color;
         } else {
@@ -1405,6 +1758,7 @@ subscribeButton.onclick = async () => {
             color = `hsla(${h}, 70%, 60%, 0.7)`;
         }
 
+        const pixelsPayload = [];
         pixelsToSend.forEach(pixel => {
             pixelsPayload.push({
                 x: pixel.x,
@@ -1416,8 +1770,10 @@ subscribeButton.onclick = async () => {
         });
 
         // Use Batch Emit with Chunking
-        const CHUNK_SIZE = 50000; // Increased to 50k (approx 6MB) - Server limit increased to 100MB
+        const CHUNK_SIZE = 50000;
         const totalChunks = Math.ceil(pixelsPayload.length / CHUNK_SIZE);
+
+        console.log(`Sending ${pixelsPayload.length} pixels to server...`);
 
         for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
             const chunk = pixelsPayload.slice(i, i + CHUNK_SIZE);
@@ -1435,12 +1791,9 @@ subscribeButton.onclick = async () => {
             generateShareCard(idolGroupName, pixelsToSend.length, color, pixelsToSend);
         }, 500);
 
-        // Trigger Ticker: Removed Local Trigger to avoid double notifications (Socket handles it)
-
-    } catch (error) {
-        console.error('[PAYMENT] Error:', error);
-        // Show detailed error message for easier debugging
-        alert(`결제 처리 중 오류가 발생했습니다: ${error.message || error}`);
+    } catch (e) {
+        console.error("Critical Purchase Error:", e);
+        alert("Critical Purchase Error: " + e.message);
     }
 };
 
@@ -2063,10 +2416,6 @@ function fetchHistory() {
                 // Format Dates (Simple YYYY-MM-DD HH:MM)
                 const dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
                 const purchased = item.purchased_at ? new Date(item.purchased_at).toLocaleString('ko-KR', dateOpts) : '-';
-                const expires = item.expires_at ? new Date(item.expires_at).toLocaleString('ko-KR', dateOpts) : '무제한';
-
-                const isExpired = item.expires_at && new Date(item.expires_at) < new Date();
-                const colorStyle = isExpired ? 'color: #ff4d4d;' : '';
 
                 tr.innerHTML = `
                     <td style="padding: 10px; font-size: 13px;">${purchased}</td>
@@ -2074,7 +2423,6 @@ function fetchHistory() {
                          <span style="color: ${idolInfo[item.idol_group_name]?.color || '#fff'}; font-weight:bold;">${item.idol_group_name}</span>
                     </td>
                     <td style="padding: 10px; font-weight: bold; color: #00d4ff;">${item.count}개</td>
-                    <td style="padding: 10px; font-size: 13px; ${colorStyle}">${expires}</td>
                 `;
                 historyList.appendChild(tr);
             });
@@ -2275,3 +2623,68 @@ document.querySelectorAll('.notice-tab').forEach(tab => {
         });
     });
 });
+
+// --- Season Timer Logic ---
+function getSeasonInfo() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-11
+
+    const seasonIndex = Math.floor(month / 3); // 0-3 (Q1-Q4)
+    const seasonNum = seasonIndex + 1;
+
+    // End months: Mar(2), Jun(5), Sep(8), Dec(11)
+    const endMonth = (seasonIndex * 3) + 2;
+
+    // Last day of the end month at 23:59:59
+    const endDate = new Date(year, endMonth + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    return { seasonNum, endDate };
+}
+
+function updateSeasonTimer() {
+    const { seasonNum, endDate } = getSeasonInfo();
+    const now = new Date();
+    const diff = endDate - now;
+
+    const containerEl = document.getElementById('season-timer');
+    let timerEl = document.getElementById('season-countdown');
+
+    // Dynamically update Season Number in UI
+    if (containerEl) {
+        // PRE-SEASON LOGIC: If 2026 Q1, show PRE-SEASON
+        let displaySeason = `SEASON ${seasonNum}`;
+        if (seasonNum === 1 && now.getFullYear() === 2026) {
+            displaySeason = "PRE-SEASON";
+        }
+
+        // Check if we need to update the season label (e.g. on load or season change)
+        // Use a simple check or just check the first text node? 
+        // Safer to just check if innerText starts with the expected string
+        const currentText = containerEl.textContent.trim();
+        if (!currentText.startsWith(displaySeason)) {
+            containerEl.innerHTML = `${displaySeason} <span style="font-size: 0.8em; color: #fff;">ENDS IN</span> <span id="season-countdown" style="font-family: monospace; font-size: 1.2em;">--:--:--:--</span>`;
+            timerEl = document.getElementById('season-countdown'); // Re-fetch new element
+        }
+    }
+
+    if (!timerEl) return;
+
+    if (diff <= 0) {
+        timerEl.textContent = "SEASON ENDED";
+        timerEl.style.color = "#ff4d4d";
+        return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    timerEl.textContent = `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+}
+
+// Start Timer
+setInterval(updateSeasonTimer, 1000);
+updateSeasonTimer(); // Initial call

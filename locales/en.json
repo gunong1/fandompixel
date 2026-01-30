@@ -17,7 +17,12 @@
         "placeholder_nickname": "Login Required",
         "label_group": "Group",
         "price_label": "Price:",
-        "btn_subscribe": "Subscribe Pixel"
+        "total_subscription_fee": "Total Subscription Fee",
+        "btn_subscribe": "Subscribe Pixel",
+        "area_selected": "Area Selected",
+        "owner_stats": "Ownership Info",
+        "status_mixed": "{count} Available ({owned} Owned)",
+        "owner_stats_value": "{count} ({percent}%)"
     },
     "ranking": {
         "title": "🏆 Fandom<br>Ranking",
@@ -43,26 +48,6 @@
             "tab_intro": "Project Info",
             "tab_process": "Donation Process",
             "tab_refund": "Refund Policy",
-            "intro": {
-                "headline": "\"Donations will be made in the name of the<br>#1 Fandom with the largest territory\"",
-                "subline": "FANDOM PIXEL is a global donation project<br>created by fandoms worldwide.",
-                "point1": "A portion of pixel sales proceeds is accumulated as donations.",
-                "point2": "At the end of each season, a donation is made in the name of the<br>#1 Fandom that occupied the most territory.",
-                "point3": "Shine your fandom and share your warm heart!"
-            },
-            "process": {
-                "title": "📢 Donation Process",
-                "step1_title": "1. Donor Name",
-                "step1_desc": "Donated in the name of the #1 Fandom in market share at season end.",
-                "step2_title": "2. Amount Calculation",
-                "step2_desc": "A certain percentage of proceeds (excluding fees) is automatically accumulated.",
-                "step3_title": "3. Beneficiary",
-                "step3_desc": "Donated to themes selected each season (e.g., Children in Crisis, Environmental Protection) via reputable foundations.",
-                "step4_title": "4. Result Reporting",
-                "step4_desc": "Donation receipts and certificates are transparently released via Official SNS within 7 days of completion.",
-                "step5_title": "5. Artist Promotion",
-                "step5_desc": "News of the #1 Fandom's donation is distributed via Official Twitter (X) and press releases to spread the artist's positive image."
-            },
             "faq": {
                 "title": "❓ FAQ",
                 "common": {
@@ -80,6 +65,33 @@
                 "sec_payment": "1. Payment",
                 "sec_donation": "2. Donation",
                 "sec_general": "3. General"
+            },
+            "tab_faq": "FAQ",
+            "intro": {
+                "headline": "\"Donations will be made in the name of the<br>#1 Fandom with the largest territory\"",
+                "subline": "FANDOM PIXEL is a global donation project<br>created by fandoms worldwide.",
+                "point1": "A portion of pixel sales proceeds is accumulated as donations.",
+                "point2": "At the end of each season, a donation is made in the name of the<br>#1 Fandom that occupied the most territory.",
+                "point3": "Shine your fandom and share your warm heart!",
+                "season_info": {
+                    "title": "📢 Season Info",
+                    "duration": "Duration: 3 Months (4 Seasons/Year)",
+                    "desc1": "At the end of the season, ranking and territory are permanently archived in the Hall of Fame.",
+                    "desc2": "The map resets when a new season starts, but your records remain forever."
+                }
+            },
+            "process": {
+                "title": "📢 Donation Process",
+                "step1_title": "1. Donor Name",
+                "step1_desc": "Donated in the name of the #1 Fandom in market share at season end.",
+                "step2_title": "2. Amount Calculation",
+                "step2_desc": "A certain percentage of proceeds (excluding fees) is automatically accumulated.",
+                "step3_title": "3. Beneficiary",
+                "step3_desc": "Donated to themes selected each season (e.g., Children in Crisis, Environmental Protection) via reputable foundations.",
+                "step4_title": "4. Result Reporting",
+                "step4_desc": "Donation receipts and certificates are transparently released via Official SNS within 7 days of completion.",
+                "step5_title": "5. Artist Promotion",
+                "step5_desc": "News of the #1 Fandom's donation is distributed via Official Twitter (X) and press releases to spread the artist's positive image."
             },
             "refund": {
                 "title": "🚫 Refund Policy",
@@ -113,6 +125,8 @@
         "payment_failed": "Payment Failed.",
         "select_pixels": "Please select pixels first.",
         "pixel_occupied": "Selected area includes occupied pixels.",
+        "selected_owned_pixels": "{count} Owned Pixels Selected",
+        "select_pixels_count": "{count} Pixels Selected",
         "ticker_prefix": "Just now,",
         "ticker_claimed": " claimed ",
         "ticker_pixels": " pixels of ",

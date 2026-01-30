@@ -3,10 +3,15 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const session = require('express-session');
 const passport = require('passport');
+const fs = require('fs');
+const path = require('path');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const app = express();
-// Trust Proxy for Render/Heroku (Required for OAuth https)
 app.set('trust proxy', 1);
+const compression = require('compression');
+app.use(compression());
+app.use('/locales', express.static(path.join(__dirname, 'locales')));
+app.use(express.static(__dirname)); // Serve other static files (css, js, images) from root
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -24,6 +29,20 @@ const db = new Database('database.db');
 // --- DATABASE OPTIMIZATION ---
 db.pragma('journal_mode = WAL'); // Better concurrency
 db.prepare('CREATE INDEX IF NOT EXISTS idx_pixels_xy ON pixels(x, y)').run(); // Fast range queries
+
+// --- Seasonal History Table (Hall of Fame) ---
+db.exec(`
+    CREATE TABLE IF NOT EXISTS season_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        season_key TEXT UNIQUE, -- e.g. "2026-Q1"
+        season_name TEXT,       -- e.g. "Season 1"
+        winner_group TEXT,
+        ranking_json TEXT,      -- Top 10 Ranking Snapshot (JSON)
+        snapshot_path TEXT,     -- Path to pixel dump JSON
+        pixel_count INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
 // --- DATABASE MIGRATIONS ---
 try {
     console.log("[MIGRATION] Attempting to add columns...");
@@ -222,11 +241,135 @@ app.get('/api/pixels/chunk', (req, res) => {
         // Optimized range query using INDEX
         const stmt = db.prepare('SELECT * FROM pixels WHERE x >= ? AND x < ? AND y >= ? AND y < ?');
         const rows = stmt.all(minX, maxX, minY, maxY);
-        // console.log(`[DEBUG] /api/pixels/chunk params: ${minX},${minY} to ${maxX},${maxY} -> Count: ${rows.length}`);
-        res.json(rows);
+
+        // Cache for 10 seconds
+        res.set('Cache-Control', 'public, max-age=10');
+
+        if (req.query.format === 'json') {
+            return res.json(rows);
+        }
+
+        // ALWAYS send binary for this optimized endpoint
+        // Binary Schema: [x(2)][y(2)][r(1)][g(1)][b(1)][group_len(1)][group_bytes...][owner_len(1)][owner_bytes...]
+        const buffers = [];
+        for (const p of rows) {
+            // Parse Color (#RRGGBB)
+            let r = 0, g = 0, b = 0;
+            if (p.color && p.color.startsWith('#') && p.color.length === 7) {
+                r = parseInt(p.color.substring(1, 3), 16) || 0;
+                g = parseInt(p.color.substring(3, 5), 16) || 0;
+                b = parseInt(p.color.substring(5, 7), 16) || 0;
+            }
+
+            // Clamp strings to 255 bytes
+            let groupBuf = Buffer.from(p.idol_group_name || '');
+            if (groupBuf.length > 255) groupBuf = groupBuf.subarray(0, 255);
+
+            let ownerBuf = Buffer.from(p.owner_nickname || '');
+            if (ownerBuf.length > 255) ownerBuf = ownerBuf.subarray(0, 255);
+
+            const buf = Buffer.alloc(2 + 2 + 3 + 1 + groupBuf.length + 1 + ownerBuf.length);
+            let offset = 0;
+            buf.writeUInt16BE(p.x, offset); offset += 2;
+            buf.writeUInt16BE(p.y, offset); offset += 2;
+            buf.writeUInt8(r, offset); offset += 1;
+            buf.writeUInt8(g, offset); offset += 1;
+            buf.writeUInt8(b, offset); offset += 1;
+
+            buf.writeUInt8(groupBuf.length, offset); offset += 1;
+            if (groupBuf.length > 0) {
+                groupBuf.copy(buf, offset); offset += groupBuf.length;
+            }
+
+            buf.writeUInt8(ownerBuf.length, offset); offset += 1;
+            if (ownerBuf.length > 0) {
+                ownerBuf.copy(buf, offset); offset += ownerBuf.length;
+            }
+            buffers.push(buf);
+        }
+        const finalBuf = Buffer.concat(buffers);
+        // console.log(`[DEBUG] /api/pixels/chunk: ${rows.length} pixels, Buffer len: ${finalBuf.length}`);
+        res.set('Content-Type', 'application/octet-stream');
+        res.send(finalBuf);
     } catch (err) {
         console.error("Error fetching chunk:", err);
         res.status(500).send(err.message);
+    }
+});
+
+// NEW: Tile Map Service (TMS) Endpoint
+// Generates a 256x256 PNG for a given grid coordinate (x, y)
+const { PNG } = require('pngjs');
+
+// Map Constants needed for Tile Calculation
+// Server doesn't need to know exact world size if it just queries by range, but for tiles we need consistent grid.
+// Tile Size = 256px
+// Grid Scale = 20 (Actual pixels per coordinate point? No, DB stores x,y. 1 DB unit = 20px visualization? No. 
+// "GRID_SIZE = 20" in main.js means visuals are 20x20. But DB x,y are arbitrary integers? 
+// Let's assume DB x,y correlates to canvas pixels 1:1, but rendered as blocks.
+// User said: "pixels are not appearing". 
+// In main.js: const chunkMinX = cx * this.chunkSize;
+// Data Schema: x, y are INTEGERS.
+// Let's assume 1 Tile = 256x256 DB units.
+app.get('/api/pixels/tile', (req, res) => {
+    const tx = parseInt(req.query.x);
+    const ty = parseInt(req.query.y);
+    const zoom = parseInt(req.query.zoom) || 1;
+
+    // Define Tile Size in "World Units"
+    // If we want fine-grained tiles, 1 tile = 256 units.
+    const TILE_SIZE = 256;
+
+    // Calculate bounds
+    const minX = tx * TILE_SIZE;
+    const minY = ty * TILE_SIZE;
+    const maxX = minX + TILE_SIZE;
+    const maxY = minY + TILE_SIZE;
+
+    try {
+        // Fetch pixels in this tile
+        // Use Index to be fast
+        const stmt = db.prepare(`SELECT x, y, color FROM pixels WHERE x >= ? AND x < ? AND y >= ? AND y < ?`);
+        const rows = stmt.all(minX, maxX, minY, maxY);
+
+        // Create PNG
+        const png = new PNG({ width: TILE_SIZE, height: TILE_SIZE });
+
+        // Fill background (Transparent)
+        // pngjs defaults to black transparent (0,0,0,0)
+
+        // Draw Pixels
+        // Each DB pixel is drawn as 1x1 pixel on the tile for now. 
+        // If main.js zooms in, it might look tiny. But logic says "Client loads images".
+        // Use 1:1 mapping for simplicity.
+
+        for (const p of rows) {
+            const lx = p.x - minX;
+            const ly = p.y - minY;
+
+            if (lx < 0 || lx >= TILE_SIZE || ly < 0 || ly >= TILE_SIZE) continue;
+
+            let r = 0, g = 0, b = 0;
+            if (p.color && p.color.startsWith('#') && p.color.length === 7) {
+                r = parseInt(p.color.substring(1, 3), 16) || 0;
+                g = parseInt(p.color.substring(3, 5), 16) || 0;
+                b = parseInt(p.color.substring(5, 7), 16) || 0;
+            }
+
+            const idx = (ly * TILE_SIZE + lx) << 2;
+            png.data[idx] = r;
+            png.data[idx + 1] = g;
+            png.data[idx + 2] = b;
+            png.data[idx + 3] = 255; // Alpha
+        }
+
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'public, max-age=60'); // Cache tiles for 1 min
+        png.pack().pipe(res);
+
+    } catch (err) {
+        console.error("Error generating tile:", err);
+        res.status(500).send("Tile Error");
     }
 });
 
@@ -277,9 +420,12 @@ io.on('connection', (socket) => {
             const now = new Date();
             const nowStr = now.toISOString(); // UTC ISO String
 
-            const expiry = new Date(now);
-            expiry.setDate(expiry.getDate() + 30); // 30 Days Expiry
-            const expiryStr = expiry.toISOString(); // UTC ISO String
+            // Dynamic Season End (Quarterly: Mar, Jun, Sep, Dec)
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const endMonth = (Math.floor(month / 3) * 3) + 2;
+            const expiry = new Date(year, endMonth + 1, 0, 23, 59, 59, 999);
+            const expiryStr = expiry.toISOString();
 
             const stmt = db.prepare(`INSERT INTO pixels (x, y, color, idol_group_name, owner_nickname, purchased_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`);
             const info = stmt.run(data.x, data.y, data.color, data.idol_group_name, data.owner_nickname, nowStr, expiryStr);
@@ -305,9 +451,12 @@ io.on('connection', (socket) => {
             const now = new Date();
             const nowStr = now.toISOString(); // UTC ISO String
 
-            const expiry = new Date(now);
-            expiry.setDate(expiry.getDate() + 30); // 30 Days Expiry
-            const expiryStr = expiry.toISOString(); // UTC ISO String
+            // Dynamic Season End (Quarterly: Mar, Jun, Sep, Dec)
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const endMonth = (Math.floor(month / 3) * 3) + 2;
+            const expiry = new Date(year, endMonth + 1, 0, 23, 59, 59, 999);
+            const expiryStr = expiry.toISOString();
 
             const insert = db.prepare(`INSERT INTO pixels (x, y, color, idol_group_name, owner_nickname, purchased_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`);
             const insertMany = db.transaction((pixels) => {

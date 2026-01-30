@@ -51,6 +51,8 @@
 - [x] **Text Visibility**: Renamed "Fandom Ranking" to two lines to save horizontal space on small screens.
 - [x] **Notice Modal**: Added FAQ tab with localized content and optimized tab styling for mobile.
 - [x] **Footer**: Added contact email `kopick@fandompixer.com` to the site footer.
+- [x] **Performance**: Implemented Offscreen Canvas optimization (cached chunks), integer coordinate rendering for mobile, and efficient data fetching with AbortController and browser caching.
+- [x] **Data Loading**: Switched to **Binary Protocol** (Buffers) for pixel data to reduce payload size, and implemented **LOD (Level of Detail)** to show a server-generated low-res map when zoomed out, preventing unnecessary network requests.
 
 ### 8. Configuration & Fixes
 

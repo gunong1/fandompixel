@@ -44,6 +44,31 @@ canvas:active {
     z-index: 10;
 }
 
+#season-timer {
+    margin-top: 10px;
+    font-size: 14px;
+    /* Reduced from 18px */
+    color: #ffeb3b;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 5px 15px;
+    border-radius: 20px;
+    display: block;
+    width: fit-content;
+}
+
+.beta-notice {
+    margin-top: 5px;
+    font-size: 11px;
+    color: #aaa;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 10px;
+    display: block;
+    width: fit-content;
+}
+
 h1 {
     margin: 0;
     font-size: 24px;
@@ -154,7 +179,7 @@ h1 {
 /* Ranking Board */
 #ranking-board {
     position: absolute;
-    top: 80px;
+    top: 170px;
     left: 20px;
     width: 220px;
     padding: 15px;
@@ -389,7 +414,7 @@ h1 {
 
     /* Ranking Board Adjustment (Horizontal) */
     #ranking-board {
-        top: 100px !important;
+        top: 145px !important;
         left: 10px !important;
         width: calc(100% - 20px) !important;
         padding: 8px 12px !important;

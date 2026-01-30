@@ -32,9 +32,16 @@
         </a>
     </nav>
 
-    <div id="container">
+    <div id="ui-container">
         <h1 data-i18n="header.title">FANDOM PIXEL</h1>
         <div class="subtitle" data-i18n="header.subtitle">10,000,000 PIXELS GLOBAL STAGE</div>
+        <div id="season-timer">
+            PRE-SEASON <span style="font-size: 0.8em; color: #fff;">ENDS IN</span> <span id="season-countdown"
+                style="font-family: monospace; font-size: 1.2em;">--:--:--:--</span>
+        </div>
+        <div class="beta-notice">
+            ⚠️ 현재는 <strong style="color: #00d4ff;">PRE-SEASON</strong> 기간입니다. 정규 시즌 기록과는 별도로 명예의 전당에 기록됩니다.
+        </div>
     </div>
 
     <!-- NEW: Fandom Ranking Board -->
@@ -160,6 +167,21 @@
                         <li data-i18n="modal.notice.intro.point2">매 시즌 종료 시, 가장 많은 영토를 점령한<br>1위 팬덤의 명의로 기부가 진행됩니다.</li>
                         <li data-i18n="modal.notice.intro.point3">여러분의 팬덤을 빛내고 따뜻한 마음을 전하세요!</li>
                     </ul>
+
+                    <div
+                        style="margin-top: 20px; padding: 15px; background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px;">
+                        <strong style="color: #00d4ff; display: block; margin-bottom: 8px;"
+                            data-i18n="modal.notice.intro.season_info.title">📢 시즌제 안내</strong>
+                        <p style="margin: 0; color: #eee; font-size: 13px; line-height: 1.6;">
+                            <strong data-i18n="modal.notice.intro.season_info.duration">시즌 기간: 3개월 (연 4회
+                                진행)</strong><br>
+                            <span data-i18n="modal.notice.intro.season_info.desc1">시즌 종료 시점의 랭킹과 영토는 '명예의 전당'에 영구
+                                박제됩니다.</span><br>
+                            <span style="color: #ffeb3b; font-weight: bold;"
+                                data-i18n="modal.notice.intro.season_info.desc2">새로운 시즌이 시작되면 맵은 초기화되지만, 여러분의 기록은 영원히
+                                남습니다.</span>
+                        </p>
+                    </div>
                 </div>
 
                 <!-- Tab 2: Process -->
@@ -310,7 +332,6 @@
                             <th style="padding: 10px;" data-i18n="modal.history.col_date">구매일</th>
                             <th style="padding: 10px;" data-i18n="modal.history.col_group">그룹</th>
                             <th style="padding: 10px;" data-i18n="modal.history.col_count">개수</th>
-                            <th style="padding: 10px;" data-i18n="modal.history.col_expiry">만료일</th>
                         </tr>
                     </thead>
                     <tbody id="history-list">
@@ -357,7 +378,7 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
-    <script src="main.js?v=ticker_fix"></script>
+    <script src="main.js?v=debug_purchase_3"></script>
     <div id="site-footer"
         style="position: fixed; bottom: 10px; width: 100%; text-align: center; color: rgba(255,255,255,0.3); font-size: 11px; pointer-events: none; z-index: 1000;">
         Contact: kopick@fandompixer.com
