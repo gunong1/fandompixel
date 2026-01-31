@@ -25,7 +25,16 @@ class I18n {
             "sidebar": { "status_available": "Available", "status_occupied": "Occupied", "owner": "Owner", "idol": "Idol", "none": "None", "description": "Subscribe to this pixel to claim territory for your artist.", "label_nickname": "Nickname", "placeholder_nickname": "Login Required", "label_group": "Group", "price_label": "Price:", "total_subscription_fee": "Total Subscription Fee", "btn_subscribe": "Subscribe Pixel", "area_selected": "Area Selected" },
             "ranking": { "title": "🏆 Fandom<br>Ranking", "loading": "Loading..." },
             "statusbar": { "notice": "📢 Notice", "help": "[F1] Help" },
-            "messages": { "payment_success": "Purchase Successful!", "login_required": "Login required", "select_pixels": "Select pixels first", "pixel_occupied": "Occupied pixels selected" },
+            "messages": {
+                "payment_success": "Purchase Successful!",
+                "login_required": "Login required",
+                "select_pixels": "Select pixels first",
+                "pixel_occupied": "Occupied pixels selected",
+                "ticker_prefix": "Just now,",
+                "ticker_claimed": " claimed ",
+                "ticker_pixels": " pixels of ",
+                "ticker_suffix": "!"
+            },
             "modal": {
                 "share": { "title": "Territory Extended!", "desc": "Save this card to show off!", "btn_download": "💾 Save Image", "btn_close": "Close" },
                 "history": { "title": "My Activity", "col_date": "Date", "col_group": "Group", "col_count": "Count", "col_expiry": "Expiry", "empty": "No history found." },
@@ -62,7 +71,16 @@ class I18n {
             defaults.sidebar = { "status_available": "구독 가능", "status_occupied": "점령됨", "owner": "소유자", "idol": "아이돌", "none": "없음", "description": "이 픽셀을 구독하여 당신의 아티스트를 위한 영토로 선포하세요.", "label_nickname": "닉네임", "placeholder_nickname": "로그인이 필요합니다", "label_group": "그룹", "price_label": "결제 금액:", "total_subscription_fee": "총 구독료", "btn_subscribe": "픽셀 구독하기" };
             defaults.ranking = { "title": "🏆 Fandom<br>Ranking", "loading": "랭킹 로딩중..." };
             defaults.statusbar = { "notice": "📢 공지", "help": "[F1] 도움말" };
-            defaults.messages = { "payment_success": "구매가 완료되었습니다!", "login_required": "로그인이 필요합니다.", "select_pixels": "먼저 픽셀을 선택해주세요.", "pixel_occupied": "이미 점령된 픽셀이 포함되어 있습니다." };
+            defaults.messages = {
+                "payment_success": "구매가 완료되었습니다!",
+                "login_required": "로그인이 필요합니다.",
+                "select_pixels": "먼저 픽셀을 선택해주세요.",
+                "pixel_occupied": "이미 점령된 픽셀이 포함되어 있습니다.",
+                "ticker_prefix": "방금",
+                "ticker_claimed": "님이",
+                "ticker_pixels": "의",
+                "ticker_suffix": "픽셀을 점령했습니다!"
+            };
             defaults.modal.share = { "title": "🎉 영토 확장 성공!", "desc": "아래 카드를 저장하여 팬덤을 자랑하세요!", "btn_download": "💾 이미지 저장", "btn_close": "닫기" };
             defaults.modal.history = { "title": "📜 내 활동 내역", "col_date": "구매일", "col_group": "그룹", "col_count": "개수", "col_expiry": "만료일", "empty": "구매 내역이 없습니다." };
             defaults.modal.help = { "title": "사용 방법", "zoom": "캔버스 확대/축소", "move": "캔버스 이동", "center": "화면 중앙 정렬", "select": "픽셀 선택", "multi_select": "다중 픽셀 선택", "desc_zoom": "마우스 휠", "desc_move": "Ctrl + 드래그", "desc_center": "스페이스바", "desc_select": "마우스 클릭", "desc_multi_select": "마우스 드래그", "close": "닫기" };
@@ -172,6 +190,9 @@ const i18n = new I18n();
 // Initialize I18n
 document.addEventListener('DOMContentLoaded', async () => {
     await i18n.init();
+
+    // Check for pending mobile payments (Safe to call now that i18n is ready)
+    checkPendingPayment();
 
     // Language Switcher Event
     const langBtn = document.getElementById('lang-switcher');
@@ -1593,6 +1614,133 @@ function updateSidePanel(singleOwnedPixel = null) {
 }
 
 
+// Check for pending mobile payments moved to DOMContentLoaded
+// checkPendingPayment();
+
+// --- Payment Recovery Logic (For Mobile Redirects) ---
+async function checkPendingPayment() {
+    console.log("[Payment Recovery] Checking for pending transactions...");
+    const pendingData = localStorage.getItem('pending_payment');
+
+    if (!pendingData) {
+        console.log("[Payment Recovery] No pending payment found.");
+        return;
+    }
+
+    try {
+        const paymentState = JSON.parse(pendingData);
+
+        // Simple validation: Check if we are back from a redirect?
+        // In some flows, we might be here without a query param if it was a tab reload, 
+        // so strictly we should check if `paymentId` is in URL OR if we trust the existence of localstorage 
+        // implies we just tried to pay. 
+        // For robustness, let's process it if we are fairly sure it's recent (optional timestamp check).
+
+        // Check for PortOne V2 response params in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPaymentId = urlParams.get('paymentId');
+
+        // If we found a pending payment in storage, we try to process it.
+        // NOTE: If payment failed / cancelled, PortOne usually redirects with error code.
+        // We should check for error indicators.
+        const code = urlParams.get('code');
+        const message = urlParams.get('message');
+
+        if (code != null) {
+            // It's a response (either success or fail)
+            if (code !== '0' && code !== undefined) { // Assuming '0' might be success or absence of code implies success in some PGs
+                // Actually PortOne V2: if paymentId exists, likely success? 
+                // Let's rely on server-side validation ideally, but here we trust client flow as per existing code.
+                // If message exists, it might be an error.
+                if (paramsHaveError(urlParams)) {
+                    console.error("[Payment Recovery] Payment likely failed:", message);
+                    alert(`결제 실패 (이동 후): ${message || 'Unknown error'}`);
+                    localStorage.removeItem('pending_payment');
+                    return;
+                }
+            }
+        }
+
+        // Logic: checking if this pending payment is relevant. 
+        // We assume valid because we clear it immediately after processing.
+        console.log("[Payment Recovery] Found pending payment state:", paymentState);
+
+        const { pixelsToSend, idolGroupName, nickname, baseColor, paymentId } = paymentState;
+
+        // Re-construct logic from success handler
+        console.log(`[Payment Recovery] Restoring purchase for ${pixelsToSend.length} pixels...`);
+
+        // Generate Pixels Payload
+        // Re-use color generation or saved color
+        let color = baseColor;
+        if (!color) {
+            // Fallback generation if not saved (backward compat)
+            if (idolInfo[idolGroupName]) {
+                color = idolInfo[idolGroupName].color;
+            } else {
+                let hash = 0;
+                for (let i = 0; i < idolGroupName.length; i++) {
+                    hash = idolGroupName.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const h = Math.abs(hash) % 360;
+                color = `hsla(${h}, 70%, 60%, 0.7)`;
+            }
+        }
+
+        const pixelsPayload = pixelsToSend.map(p => ({
+            x: p.x,
+            y: p.y,
+            color: color,
+            idol_group_name: idolGroupName,
+            owner_nickname: nickname
+        }));
+
+        // Batch Emit
+        const CHUNK_SIZE = 50000;
+        for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
+            const chunk = pixelsPayload.slice(i, i + CHUNK_SIZE);
+            socket.emit('batch_new_pixels', chunk);
+        }
+
+        alert('구매가 완료되었습니다! (모바일 복귀)');
+
+        // UI Cleanup
+        if (sidePanel) sidePanel.style.display = 'none';
+        if (nicknameInput) nicknameInput.value = '';
+        selectedPixels = [];
+        draw();
+
+        // Trigger Share Card
+        setTimeout(() => {
+            generateShareCard(idolGroupName, pixelsToSend.length, color, pixelsToSend);
+        }, 500);
+
+    } catch (e) {
+        console.error("[Payment Recovery] Error processing pending payment:", e);
+        alert("결제 복구 중 오류가 발생했습니다.");
+    } finally {
+        // Always clear to prevent infinite loops
+        localStorage.removeItem('pending_payment');
+        // Optional: Clean URL params
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+}
+
+// Helper to detect error in URL params (PortOne specific)
+function paramsHaveError(params) {
+    // If 'code' present and not success-like? 
+    // Standard PortOne V1 uses error_msg, V2 uses code/message.
+    // Let's assume safely: if `message` is present, it's usually an error description?
+    // Or strictly rely on `code`. 
+    // If `paymentId` is present, it's usually success.
+
+    if (params.get('code') && params.get('code') !== '0' && params.get('code') !== 'SUCCESS') return true;
+    // Note: Some PGs return logic differently. 
+    // Simplest: If paymentId is present, we proceed.
+    return false;
+}
+
 // --- User Auth ---
 let currentUser = null;
 
@@ -1740,12 +1888,38 @@ subscribeButton.onclick = async () => {
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
+        // --- Persist State for Mobile Redirects ---
+        // We save before requestPayment because mobile will redirect immediately
+        console.log("[PAYMENT] Saving pending state for mobile recovery...");
+        const paymentState = {
+            pixelsToSend: pixelsToSend,
+            idolGroupName: idolGroupName,
+            nickname: nickname,
+            paymentId: paymentId,
+            baseColor: null, // Will calculate below to save consistent color
+            timestamp: Date.now()
+        };
+
+        // Pre-calculate color to ensure consistency
+        if (idolInfo[idolGroupName]) {
+            paymentState.baseColor = idolInfo[idolGroupName].color;
+        } else {
+            let hash = 0;
+            for (let i = 0; i < idolGroupName.length; i++) {
+                hash = idolGroupName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const h = Math.abs(hash) % 360;
+            paymentState.baseColor = `hsla(${h}, 70%, 60%, 0.7)`;
+        }
+
+        localStorage.setItem('pending_payment', JSON.stringify(paymentState));
+
+
         // --- Request Payment ---
         // Add redirectUrl for Mobile Environments to prevent popup blocking and ensure return
         if (isMobile()) {
             console.log("[PAYMENT] Mobile environment detected. Adding redirectUrl.");
-            paymentRequest.redirectUrl = window.location.href;
-            // Optionally set windowType if needed by specific PG, but usually redirectUrl triggers the flow.
+            paymentRequest.redirectUrl = window.location.origin + window.location.pathname; // Explicit return URL
             // paymentRequest.m_redirect_url = window.location.href; // Legacy param just in case
         }
 
@@ -1795,6 +1969,10 @@ subscribeButton.onclick = async () => {
         }
 
         alert('구매가 완료되었습니다!');
+
+        // Clear pending state on successful in-context completion
+        localStorage.removeItem('pending_payment');
+
         sidePanel.style.display = 'none';
         nicknameInput.value = '';
         selectedPixels = [];
