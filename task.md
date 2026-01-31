@@ -31,7 +31,8 @@
   - [x] Draw visual guide for high-value zones on canvas.
 - [ ] **Deployment: Fix Google OAuth**
   - [ ] Update `server.js` to strictly checking `callbackURL` from env.
-  - [ ] Document Redirect URIs for user.
+  - [x] Document Redirect URIs for user.
+  - [x] Update Google Client ID/Secret (Local .env updated).
 - [ ] **Mobile UX: Touch Sensitivity**
   - [x] Reduce Long Press Duration to 0.15s.
 - [x] **UI: Sort Idol List**
@@ -85,6 +86,7 @@
   - [x] Increase maximum zoom-out range (lower minimum scale).
 - [x] **Feature: Contact Footer**
   - [x] Add contact email to side footer.
+  - [x] Refine UI Terminology ("Total Purchase Cost", "Occupy Pixel").
 - [ ] **Feature: Tile Map Service (TMS)**
   - [/] Install `pngjs` on server.
   - [ ] Implement `/api/pixels/tile` endpoint.
