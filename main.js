@@ -1734,7 +1734,21 @@ subscribeButton.onclick = async () => {
 
         console.log(`[PAYMENT] Mode: ${i18n.locale}, Channel: ${targetChannelKey}, Amount: ${finalAmount} ${finalCurrency}`);
 
+
+        // Helper: Mobile Detection
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
         // --- Request Payment ---
+        // Add redirectUrl for Mobile Environments to prevent popup blocking and ensure return
+        if (isMobile()) {
+            console.log("[PAYMENT] Mobile environment detected. Adding redirectUrl.");
+            paymentRequest.redirectUrl = window.location.href;
+            // Optionally set windowType if needed by specific PG, but usually redirectUrl triggers the flow.
+            // paymentRequest.m_redirect_url = window.location.href; // Legacy param just in case
+        }
+
         const response = await PortOne.requestPayment(paymentRequest);
 
         if (response.code !== undefined) {
@@ -2706,10 +2720,10 @@ sidePanel.addEventListener('touchstart', (e) => {
 
 sidePanel.addEventListener('touchmove', (e) => {
     if (window.innerWidth > 768) return;
-    
+
     // Check constraints again in case scroll changed
     // Use a slightly larger tolerance to latch onto drag mode
-    if (sidePanel.scrollTop > 5 && !isPanelDragging) return; 
+    if (sidePanel.scrollTop > 5 && !isPanelDragging) return;
 
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - panelStartY;
@@ -2718,7 +2732,7 @@ sidePanel.addEventListener('touchmove', (e) => {
         // Check if we started dragging or if we are already dragging
         // We only want to intercept if we are pulling DOWN from the TOP.
         // If the user was scrolling UP and hit top, then pulls down, that is valid.
-        
+
         if (e.cancelable) e.preventDefault(); // Prevent native scroll (overscroll behavior)
         isPanelDragging = true;
         sidePanel.style.transform = `translateY(${deltaY}px)`;
@@ -2742,7 +2756,7 @@ sidePanel.addEventListener('touchend', (e) => {
     if (deltaY > threshold) {
         // CLOSE ACTION
         sidePanel.style.transform = `translateY(100%)`; // Slide out completely
-        
+
         // Wait for animation then reset state
         setTimeout(() => {
             selectedPixels = []; // Clear selection

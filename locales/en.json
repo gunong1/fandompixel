@@ -58,9 +58,9 @@
                     "q3": "Q: How is the donation used?",
                     "a3": "A: A portion of the proceeds will be donated to an NGO under the name of the winning fandom. Details will be transparently shared on our SNS and Notice board.",
                     "q4": "Q: How long do I own the pixels?",
-                    "a4": "A: Each pixel you purchase remains under your ownership for 30 days (one month) from the date of payment. You can repurchase after the period expires.",
+                    "a4": "A: Ownership is maintained until the end of the season. You can purchase again when a new season starts.",
                     "q5": "Q: Can I change my nickname?",
-                    "a5": "A: Currently, nicknames are tied to your Google login. Please contact us if you need to change it."
+                    "a5": "A: Currently, nicknames are tied to your Google login."
                 },
                 "sec_payment": "1. Payment",
                 "sec_donation": "2. Donation",
