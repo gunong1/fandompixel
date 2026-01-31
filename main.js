@@ -2688,3 +2688,71 @@ function updateSeasonTimer() {
 // Start Timer
 setInterval(updateSeasonTimer, 1000);
 updateSeasonTimer(); // Initial call
+
+// --- Mobile Swipe-to-Close for Side Panel ---
+let panelStartY = 0;
+let isPanelDragging = false;
+
+sidePanel.addEventListener('touchstart', (e) => {
+    if (window.innerWidth > 768) return; // Only apply on mobile where it acts as bottom sheet
+    // Only facilitate drag if at top of scroll
+    if (sidePanel.scrollTop > 5) return; // Tolerance of 5px
+
+    // We don't prevent default here to allow click events to pass through if it's a tap
+    panelStartY = e.touches[0].clientY;
+    isPanelDragging = false;
+    sidePanel.style.transition = 'none'; // Disable transition during drag
+}, { passive: true });
+
+sidePanel.addEventListener('touchmove', (e) => {
+    if (window.innerWidth > 768) return;
+    
+    // Check constraints again in case scroll changed
+    // Use a slightly larger tolerance to latch onto drag mode
+    if (sidePanel.scrollTop > 5 && !isPanelDragging) return; 
+
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - panelStartY;
+
+    if (deltaY > 0) { // Dragging Down
+        // Check if we started dragging or if we are already dragging
+        // We only want to intercept if we are pulling DOWN from the TOP.
+        // If the user was scrolling UP and hit top, then pulls down, that is valid.
+        
+        if (e.cancelable) e.preventDefault(); // Prevent native scroll (overscroll behavior)
+        isPanelDragging = true;
+        sidePanel.style.transform = `translateY(${deltaY}px)`;
+    }
+}, { passive: false });
+
+sidePanel.addEventListener('touchend', (e) => {
+    if (window.innerWidth > 768) return;
+    if (!isPanelDragging) {
+        // Clean up any potential transform if it was a tiny jiggle
+        sidePanel.style.transform = '';
+        return;
+    }
+
+    const currentY = e.changedTouches[0].clientY;
+    const deltaY = currentY - panelStartY;
+    const threshold = 100; // Threshold to close
+
+    sidePanel.style.transition = 'transform 0.3s ease-out'; // Re-enable transition for snap
+
+    if (deltaY > threshold) {
+        // CLOSE ACTION
+        sidePanel.style.transform = `translateY(100%)`; // Slide out completely
+        
+        // Wait for animation then reset state
+        setTimeout(() => {
+            selectedPixels = []; // Clear selection
+            sidePanel.style.display = 'none';
+            sidePanel.style.transform = ''; // Reset css transform for next open
+            draw(); // Redraw canvas to remove highlighting
+        }, 300);
+    } else {
+        // SNAP BACK
+        sidePanel.style.transform = `translateY(0)`;
+    }
+    isPanelDragging = false;
+});
