@@ -1999,7 +1999,6 @@ subscribeButton.onclick = async () => {
         if (i18n.locale === 'en') {
             // USD Logic (Global - PayPal)
             const exchangeRate = 1000;
-            // Fix: PortOne PayPal integration checks integer amounts.
             let usdDollars = totalAmount / exchangeRate;
             let usdCents = Math.round(usdDollars * 100);
 
@@ -2019,8 +2018,16 @@ subscribeButton.onclick = async () => {
             paymentRequest.totalAmount = finalAmount;
             paymentRequest.currency = "USD";
             paymentRequest.channelKey = targetChannelKey;
-            paymentRequest.payMethod = "CARD"; // V2 standard enum even for PayPal
+
+            // --- STRICT PAYPAL CONFIGURATION ---
+            paymentRequest.payMethod = "PAYPAL";
             paymentRequest.country = "US";
+
+            // Remove any potential KRW-specific fields
+            delete paymentRequest.cardQuota;
+            delete paymentRequest.escrow;
+            delete paymentRequest.bypass;
+
             paymentRequest.windowType = {
                 pc: 'IFRAME',
                 mobile: 'POPUP'
@@ -2034,6 +2041,8 @@ subscribeButton.onclick = async () => {
             paymentRequest.totalAmount = finalAmount;
             paymentRequest.currency = "KRW";
             paymentRequest.channelKey = targetChannelKey;
+
+            // --- STRICT KRW CONFIGURATION ---
             paymentRequest.payMethod = "CARD";
         }
 
