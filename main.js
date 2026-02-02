@@ -1990,6 +1990,7 @@ subscribeButton.onclick = async () => {
             orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
             customer: {
                 fullName: nickname,
+                phoneNumber: "010-0000-0000", // Required by KG Inicis V2
                 email: currentUser ? currentUser.email : undefined,
             },
             // Note: totalAmount is set below
