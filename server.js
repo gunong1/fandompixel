@@ -350,6 +350,7 @@ io.on('connection', (socket) => {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
+        console.log(`[DEBUG] Received purchase_pixels: ${pixels.length} pixels`);
         try {
             const bulkOps = pixels.map(p => ({
                 updateOne: {
@@ -366,7 +367,10 @@ io.on('connection', (socket) => {
                     upsert: true
                 }
             }));
-            await Pixel.bulkWrite(bulkOps);
+
+            console.log('[DEBUG] Executing bulkWrite...');
+            const result = await Pixel.bulkWrite(bulkOps);
+            console.log('[DEBUG] bulkWrite Result:', result);
 
             const updates = pixels.map(p => ({
                 x: p.x,
@@ -376,10 +380,11 @@ io.on('connection', (socket) => {
                 ownerNickname: data.nickname
             }));
 
+            console.log('[DEBUG] Emitting pixel_update...');
             io.emit('pixel_update', updates);
 
         } catch (e) {
-            console.error("Purchase Error:", e);
+            console.error("[CRITICAL] Purchase Error:", e);
         }
     });
 
