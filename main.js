@@ -1980,7 +1980,7 @@ subscribeButton.onclick = async () => {
         // --- Payment Channel & Currency Logic ---
         let finalAmount = totalAmount;
         let finalCurrency = "KRW";
-        // Default to KRW Channel from Config
+        // Default to KRW Channel (Inicis)
         let targetChannelKey = paymentConfig.channelKey;
 
         // Base Request Object
@@ -1996,42 +1996,31 @@ subscribeButton.onclick = async () => {
         };
 
         if (i18n.locale === 'en') {
-            // USD Logic (PayPal)
+            // USD Logic (Global - PayPal)
             const exchangeRate = 1000;
-            // Fix: PortOne PayPal integration seems to interpret integer '1' as '1 cent' ($0.01).
-            // We need to send correct CENTS value.
+            // Fix: PortOne PayPal integration checks integer amounts.
             let usdDollars = totalAmount / exchangeRate;
             let usdCents = Math.round(usdDollars * 100);
 
-            // Enforce Minimum $0.01 (1 Cent)
+            // Enforce Minimum $0.01
             if (usdCents < 1) usdCents = 1;
 
             finalAmount = usdCents;
-
             finalCurrency = "USD";
-            // Check if there is a separate USD channel key in config? 
-            // For now, assuming the env var provides the primary one. 
-            // If explicit PayPal key needed, user must provide it. 
-            // Retaining legacy hardcoded PayPal key IF env var is missing or generic?
-            // User instruction: "Remove Test CID... replace with Real". 
-            // I will assume the server provides the CORRECT one.
-            // But wait, if single ENV var, how to distinguish PayPal vs Toss?
-            // The existing code had two different hardcoded keys.
-            // I should stick to the ONE primary key from env for now as requested, 
-            // OR checks if I should add a specific ENV for PayPal.
-            // Safe bet: Use the fetched key. If user needs multi-channel, they'll ask or add var.
 
-            // Actually, keep the PayPal one hardcoded if it's a specific "Test" key? 
-            // The user wants "Real Operation Mode". 
-            // I will use the configurable key for now to ensure compliance.
-            targetChannelKey = paymentConfig.channelKey;
+            // USE GLOBAL KEY (PayPal)
+            if (paymentConfig.channelKeyGlobal) {
+                targetChannelKey = paymentConfig.channelKeyGlobal;
+            } else {
+                console.warn("[PAYMENT] Global Channel Key missing, falling back to default.");
+            }
 
             paymentRequest.totalAmount = finalAmount;
             paymentRequest.currency = "USD";
             paymentRequest.channelKey = targetChannelKey;
-            paymentRequest.payMethod = "PAYPAL";
+            paymentRequest.payMethod = "PAYPAL"; // Easy Pay fallback
         } else {
-            // KRW Logic (Toss)
+            // KRW Logic (Domestic - Inicis)
             finalAmount = totalAmount;
             finalCurrency = "KRW";
             targetChannelKey = paymentConfig.channelKey;

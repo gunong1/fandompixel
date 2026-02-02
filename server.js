@@ -423,7 +423,8 @@ app.get('/api/config/payment', (req, res) => {
     // Return public keys only. NEVER return API Secret here.
     res.json({
         storeId: process.env.PORTONE_STORE_ID,
-        channelKey: process.env.PORTONE_CHANNEL_KEY,
+        channelKey: process.env.PORTONE_CHANNEL_KEY, // Default (KRW - Inicis)
+        channelKeyGlobal: process.env.PORTONE_CHANNEL_KEY_GLOBAL, // Global (USD - PayPal)
         paymentIdPrefix: process.env.PAYMENT_ID_PREFIX || 'prod-'
     });
 });
