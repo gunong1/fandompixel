@@ -356,6 +356,11 @@ io.on('connection', (socket) => {
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
         console.log(`[DEBUG] Received purchase_pixels: ${pixels.length} pixels`);
+
+        if (data.paymentId && data.paymentId.startsWith("TEST_BYPASS")) {
+            console.log("!!! [TEST MODE] Payment Bypassed explicitly !!!");
+        }
+
         try {
             const bulkOps = pixels.map(p => ({
                 updateOne: {

@@ -1981,6 +1981,46 @@ subscribeButton.onclick = async () => {
 
         // [MINIMUM PAYMENT CHECK] 1000 KRW Threshold
         if (totalAmount < 1000) {
+            // [TEST MODE] Bypass
+            if (confirm("결제 금액이 1000원 미만입니다.\n[테스트 모드] 무료로 결제를 우회(Bypass)하시겠습니까? (서버에 기록됩니다)")) {
+                console.log("[PAYMENT] Bypass initiated by User.");
+
+                let color = '#ffffff';
+                if (idolInfo[idolGroupName]) {
+                    color = idolInfo[idolGroupName].color;
+                } else {
+                    let hash = 0;
+                    for (let i = 0; i < idolGroupName.length; i++) {
+                        hash = idolGroupName.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    const h = Math.abs(hash) % 360;
+                    color = `hsla(${h}, 70%, 60%, 0.7)`;
+                }
+
+                const purchaseData = {
+                    pixels: pixelsToSend,
+                    idolColor: color,
+                    idolGroupName: idolGroupName,
+                    nickname: nickname,
+                    paymentId: "TEST_BYPASS_" + Date.now()
+                };
+
+                socket.emit('purchase_pixels', purchaseData);
+                alert('테스트 결제가 완료되었습니다! (무료)');
+
+                localStorage.removeItem('pending_payment');
+                sidePanel.style.display = 'none';
+                if (nicknameInput) {
+                    nicknameInput.value = nickname;
+                    nicknameInput.disabled = false;
+                    nicknameInput.readOnly = true;
+                    nicknameInput.style.backgroundColor = '#333';
+                }
+                selectedPixels = [];
+                draw();
+                return;
+            }
+
             alert("최소 결제 금액은 1,000원입니다. 픽셀을 더 선택해주세요! (Minimum payment is 1,000 KRW)");
             return;
         }
