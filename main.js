@@ -579,7 +579,10 @@ class ChunkManager {
                     pixelMap.set(pKey, p);
                 });
                 requestClusterUpdate(); // Trigger label generation
-                needsRedraw = true; // Force redraw after loading
+
+                // [FIX] Force immediate render to prevent "Lazy Rendering"
+                needsRedraw = true;
+                draw(); // Trigger immediate frame
             }
 
             // Mark data as loaded for this chunk
