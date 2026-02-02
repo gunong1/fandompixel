@@ -2131,27 +2131,14 @@ subscribeButton.onclick = async () => {
             color = `hsla(${h}, 70%, 60%, 0.7)`;
         }
 
-        const pixelsPayload = [];
-        pixelsToSend.forEach(pixel => {
-            pixelsPayload.push({
-                x: pixel.x,
-                y: pixel.y,
-                color: color,
-                idol_group_name: idolGroupName,
-                owner_nickname: nickname
-            });
-        });
-
-        // Use Batch Emit with Chunking
-        const CHUNK_SIZE = 50000;
-        const totalChunks = Math.ceil(pixelsPayload.length / CHUNK_SIZE);
-
-        console.log(`Sending ${pixelsPayload.length} pixels to server...`);
-
-        for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
-            const chunk = pixelsPayload.slice(i, i + CHUNK_SIZE);
-            socket.emit('batch_new_pixels', chunk);
-        }
+        // [FIX] Match server.js expected payload structure
+        const purchaseData = {
+            pixels: pixelsToSend, // Array of {x, y, ...}
+            idolColor: color,
+            idolGroupName: idolGroupName,
+            nickname: nickname
+        };
+        socket.emit('purchase_pixels', purchaseData);
 
         alert('구매가 완료되었습니다!');
 
