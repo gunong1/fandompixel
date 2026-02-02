@@ -2006,8 +2006,9 @@ subscribeButton.onclick = async () => {
                 console.warn("[PAYMENT] Global Channel Key missing, falling back to default.");
             }
 
-            // [Request Strategy v17: Extreme Minimalism]
-            // ONLY 6 Fields. NO payMethod. NO windowType.
+            // [Request Strategy v18: Whitelist + Mandatory Fields]
+            // REQUIRED: storeId, channelKey, paymentId, orderName, totalAmount, currency, payMethod
+            // FORBIDDEN: windowType, customer, products, escrow, bypass
             paymentRequest = {
                 storeId: paymentConfig.storeId,
                 paymentId: paymentId,
@@ -2015,7 +2016,7 @@ subscribeButton.onclick = async () => {
                 totalAmount: finalAmount,
                 currency: "USD",
                 channelKey: targetChannelKey,
-                // payMethod REMOVED (Implicit by Channel Key)
+                payMethod: "PAYPAL" // Mandatory Field
             };
 
         } else {
