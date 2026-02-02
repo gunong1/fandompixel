@@ -2031,7 +2031,8 @@ subscribeButton.onclick = async () => {
 
             console.log(`[PAYMENT] Mode: USD(PayPal), Channel: ${targetChannelKey}, Amount: ${finalAmount}`);
 
-            // [HARDCODED CLEAN OBJECT]
+            // [HARDCODED CLEAN OBJECT v21]
+            // PayPal requires "REDIRECTION" because it doesn't support V2 Modals.
             const paypalData = {
                 storeId: paymentConfig.storeId,
                 channelKey: targetChannelKey,
@@ -2039,7 +2040,15 @@ subscribeButton.onclick = async () => {
                 orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
                 totalAmount: finalAmount,
                 currency: "USD",
-                payMethod: "EASY_PAY" // Changed to EASY_PAY
+                payMethod: "PAYPAL",
+
+                // ★ CRITICAL: Force Redirection for PayPal (No Modal/Iframe support)
+                windowType: {
+                    pc: "REDIRECTION",
+                    mobile: "REDIRECTION"
+                },
+                // Return URL after payment
+                redirectUrl: window.location.href
             };
 
             // Call Payment immediately (Bypassing mobile token logic which adds redirection clutter)
