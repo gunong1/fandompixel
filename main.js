@@ -1957,9 +1957,28 @@ subscribeButton.onclick = async () => {
         // --- Request Payment ---
         // Add redirectUrl for Mobile Environments to prevent popup blocking and ensure return
         if (isMobile()) {
-            console.log("[PAYMENT] Mobile environment detected. Adding redirectUrl.");
-            paymentRequest.redirectUrl = window.location.origin + window.location.pathname; // Explicit return URL
-            // paymentRequest.m_redirect_url = window.location.href; // Legacy param just in case
+            console.log("[PAYMENT] Mobile environment detected. Requesting Session Recovery Token...");
+
+            try {
+                // Request One-Time Session Recovery Token
+                const tokenRes = await fetch('/api/auth/recovery-token', { method: 'POST' });
+                if (tokenRes.ok) {
+                    const tokenData = await tokenRes.json();
+                    if (tokenData.token) {
+                        console.log(`[PAYMENT] Recovery Token obtained: ${tokenData.token}`);
+                        // Append token to redirect URL
+                        const returnUrl = new URL(window.location.origin + window.location.pathname);
+                        returnUrl.searchParams.set('restore_session', tokenData.token);
+                        paymentRequest.redirectUrl = returnUrl.toString();
+                    }
+                } else {
+                    console.warn("[PAYMENT] Failed to get recovery token. Proceeding without session recovery.");
+                    paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
+                }
+            } catch (e) {
+                console.error("[PAYMENT] Error fetching recovery token:", e);
+                paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
+            }
         }
 
         const response = await PortOne.requestPayment(paymentRequest);
@@ -2401,28 +2420,31 @@ function generateShareCard(idolName, pixelCount, baseColor, purchasedPixels) {
         console.log(`[ShareCard] Rendering ${purchasedPixels.length} pixels, scale: ${drawScale.toFixed(4)}, pixelSize: ${pSize.toFixed(2)}px, sampling: ${shouldSample ? `1/${sampleRate}` : 'none'}`);
 
         // Draw Relevant Pixels
+        // Draw Relevant Pixels
         let renderedCount = 0;
-        pixelMap.forEach(pixel => {
-            // Filter: Only draw if within our Viewport Box
+
+        // FIX: Iterate purchasedPixels directly to guarantee rendering without waiting for socket
+        const pixelsToDraw = purchasedPixels || [];
+
+        pixelsToDraw.forEach(pixel => {
+            // Filter: Only draw if within our Viewport Box (Should be always true if minX/maxX calc is correct)
             if (pixel.x >= minX && pixel.x <= maxX && pixel.y >= minY && pixel.y <= maxY) {
-                // Filter: Only draw if SAME GROUP as purchased
-                if (pixel.idol_group_name === idolName) {
 
-                    // Apply sampling for performance
-                    if (shouldSample && renderedCount % sampleRate !== 0) {
-                        renderedCount++;
-                        return;
-                    }
-
-                    const screenX = mapX + drawOffsetX + (pixel.x - minX) * drawScale;
-                    const screenY = mapY + drawOffsetY + (pixel.y - minY) * drawScale;
-
-                    // Draw Pixel
-                    ctx.fillStyle = pixel.color || baseColor;
-                    // Use ceil to prevent gaps
-                    ctx.fillRect(screenX, screenY, Math.ceil(pSize), Math.ceil(pSize));
+                // Apply sampling for performance
+                if (shouldSample && renderedCount % sampleRate !== 0) {
                     renderedCount++;
+                    return;
                 }
+
+                const screenX = mapX + drawOffsetX + (pixel.x - minX) * drawScale;
+                const screenY = mapY + drawOffsetY + (pixel.y - minY) * drawScale;
+
+                // Draw Pixel
+                ctx.fillStyle = baseColor; // Use passed baseColor as pixels might not have color prop yet
+                // Use ceil to prevent gaps, ensure at least 1px
+                const effectiveSize = Math.max(1, Math.ceil(pSize));
+                ctx.fillRect(screenX, screenY, effectiveSize, effectiveSize);
+                renderedCount++;
             }
         });
 

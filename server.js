@@ -161,8 +161,86 @@ function getPixelPrice(x, y) {
 
 // --- Routes ---
 
+// --- Auth Token Table (Session Recovery) ---
+db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_tokens (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME
+    )
+`);
+
+// --- Helper: Generate Token ---
+function generateToken() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// --- Routes ---
+
 app.get('/', (req, res) => {
+    // Session Recovery Logic
+    const recoveryToken = req.query.restore_session;
+    if (recoveryToken && !req.isAuthenticated()) {
+        console.log(`[AUTH] Attempting session recovery with token: ${recoveryToken}`);
+        try {
+            const tokenParams = db.prepare('SELECT * FROM auth_tokens WHERE token = ?').get(recoveryToken);
+
+            if (tokenParams) {
+                const now = new Date();
+                const expiry = new Date(tokenParams.expires_at);
+
+                if (now < expiry) {
+                    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(tokenParams.user_id);
+                    if (user) {
+                        req.login(user, (err) => {
+                            if (err) {
+                                console.error("[AUTH] Login error during recovery:", err);
+                            } else {
+                                console.log(`[AUTH] Session recovered for user: ${user.nickname}`);
+                                // Consume token (One-time use)
+                                db.prepare('DELETE FROM auth_tokens WHERE token = ?').run(recoveryToken);
+                            }
+                        });
+                    }
+                } else {
+                    console.log("[AUTH] Recovery token expired");
+                    db.prepare('DELETE FROM auth_tokens WHERE token = ?').run(recoveryToken); // Cleanup
+                }
+            } else {
+                console.log("[AUTH] Invalid recovery token");
+            }
+        } catch (e) {
+            console.error("[AUTH] Recovery error:", e);
+        }
+    }
+
+    // Clean URL if token present (Optional, but good for UX)
+    // Client-side can also do history.replaceState
+
     res.sendFile(__dirname + '/index.html');
+});
+
+// NEW: Generate Recovery Token Endpoint
+app.post('/api/auth/recovery-token', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+        const token = generateToken();
+        const userId = req.user.id;
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + 10 * 60000); // 10 minutes from now
+
+        db.prepare('INSERT INTO auth_tokens (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, expiresAt.toISOString());
+
+        console.log(`[AUTH] Generated recovery token for user ${userId}: ${token}`);
+        res.json({ token: token });
+    } catch (e) {
+        console.error("Token generation failed:", e);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 // Auth Routes
