@@ -2014,7 +2014,7 @@ subscribeButton.onclick = async () => {
 
         if (i18n.locale === 'en') {
             // ============================================================
-            // 1. USD Logic (Global - PayPal) - STRICT CLEAN OBJECT
+            // 1. USD Logic (Global - PayPal) -> V1 SDK (IMP)
             // ============================================================
             const exchangeRate = 1450;
             let usdAmount = Math.floor(totalAmount / exchangeRate);
@@ -2023,377 +2023,354 @@ subscribeButton.onclick = async () => {
             finalAmount = usdAmount;
             finalCurrency = "USD";
 
-            if (paymentConfig.channelKeyGlobal) {
-                targetChannelKey = paymentConfig.channelKeyGlobal;
-            } else {
+            console.log(`[PAYMENT] Mode: USD(PayPal V1), Amount: ${finalAmount}`);
 
-                console.log(`[PAYMENT] Mode: USD(PayPal V1), Amount: ${finalAmount}`);
+            // Initialize V1 SDK (User Code: imp61605332)
+            const IMP = window.IMP;
+            IMP.init("imp61605332");
 
-                // Initialize V1 SDK (User Code: imp61605332)
-                const IMP = window.IMP;
-                IMP.init("imp61605332");
-
-                // Wrap V1 callback in a Promise to return a response structure compatible with V2 logic
-                response = await new Promise((resolve) => {
-                    IMP.request_pay({
-                        pg: "paypal",           // V1: 'paypal' provider
-                        pay_method: "paypal",   // V1: 'paypal' method
-                        merchant_uid: paymentId,
-                        name: `Idolpixel: ${pixelsToSend.length} pixels`,
-                        amount: finalAmount,
-                        currency: "USD",
-                        m_redirect_url: window.location.href, // Mobile Redirection
-                    }, function (rsp) {
-                        if (rsp.success) {
-                            console.log("[PAYMENT] V1 Success:", rsp);
-                            resolve(rsp); // Successful object
-                        } else {
-                            console.error("[PAYMENT] V1 Failure:", rsp.error_msg);
-                            // Return V2-like error structure so downstream check works
-                            resolve({
-                                code: "V1_PAY_FAIL",
-                                message: rsp.error_msg
-                            });
-                        }
-                    });
-                });
-
-            } else {
-                // ============================================================
-                // 2. KRW Logic (Domestic - Inicis) -> V2 SDK (PortOne)
-                // ============================================================
-                finalAmount = totalAmount;
-                finalCurrency = "KRW";
-                targetChannelKey = paymentConfig.channelKey;
-
-                console.log(`[PAYMENT] Mode: KRW(Inicis V2), Channel: ${targetChannelKey}, Amount: ${finalAmount}`);
-
-                const paymentRequest = {
-                    storeId: paymentConfig.storeId,
-                    paymentId: paymentId,
-                    orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
-                    totalAmount: finalAmount,
-                    currency: "KRW",
-                    channelKey: targetChannelKey,
-                    payMethod: "CARD",
-                    customer: {
-                        fullName: nickname,
-                        phoneNumber: "010-0000-0000",
-                        email: currentUser ? currentUser.email : undefined,
+            // Wrap V1 callback in a Promise to return a response structure compatible with V2 logic
+            response = await new Promise((resolve) => {
+                IMP.request_pay({
+                    pg: "paypal",           // V1: 'paypal' provider
+                    pay_method: "paypal",   // V1: 'paypal' method
+                    merchant_uid: paymentId,
+                    name: `Idolpixel: ${pixelsToSend.length} pixels`,
+                    amount: finalAmount,
+                    currency: "USD",
+                    m_redirect_url: window.location.href, // Mobile Redirection
+                }, function (rsp) {
+                    if (rsp.success) {
+                        console.log("[PAYMENT] V1 Success:", rsp);
+                        resolve(rsp); // Successful object
+                    } else {
+                        console.error("[PAYMENT] V1 Failure:", rsp.error_msg);
+                        // Return V2-like error structure so downstream check works
+                        resolve({
+                            code: "V1_PAY_FAIL",
+                            message: rsp.error_msg
+                        });
                     }
-                };
-
-                // Mobile Redirect Logic (Only for KRW/Inicis V2)
-                if (isMobile()) {
-                    console.log("[PAYMENT] Mobile environment detected. Requesting Session Recovery Token...");
-                    try {
-                        const tokenRes = await fetch('/api/auth/recovery-token', { method: 'POST' });
-                        if (tokenRes.ok) {
-                            const tokenData = await tokenRes.json();
-                            if (tokenData.token) {
-                                const returnUrl = new URL(window.location.origin + window.location.pathname);
-                                returnUrl.searchParams.set('restore_session', tokenData.token);
-                                paymentRequest.redirectUrl = returnUrl.toString();
-                            }
-                        } else {
-                            paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
-                        }
-                    } catch (e) {
-                        paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
-                    }
-                }
-
-                response = await PortOne.requestPayment(paymentRequest);
-            }
-
-            if (response.code !== undefined) {
-                console.error("Payment failed:", response); // Log full response for debugging
-                return alert(`결제 실패: ${response.message}`);
-            }
-
-            // --- Payment Success Logic ---
-            console.log("Payment Success! Updating pixels...");
-
-            // Generate Color
-            let color = '#ffffff';
-            if (idolInfo[idolGroupName]) {
-                color = idolInfo[idolGroupName].color;
-            } else {
-                let hash = 0;
-                for (let i = 0; i < idolGroupName.length; i++) {
-                    hash = idolGroupName.charCodeAt(i) + ((hash << 5) - hash);
-                }
-                const h = Math.abs(hash) % 360;
-                color = `hsla(${h}, 70%, 60%, 0.7)`;
-            }
-
-            const pixelsPayload = [];
-            pixelsToSend.forEach(pixel => {
-                pixelsPayload.push({
-                    x: pixel.x,
-                    y: pixel.y,
-                    color: color,
-                    idol_group_name: idolGroupName,
-                    owner_nickname: nickname
                 });
             });
 
-            // Use Batch Emit with Chunking
-            const CHUNK_SIZE = 50000;
-            const totalChunks = Math.ceil(pixelsPayload.length / CHUNK_SIZE);
+        } else {
+            // ============================================================
+            // 2. KRW Logic (Domestic - Inicis) -> V2 SDK (PortOne)
+            // ============================================================
+            finalAmount = totalAmount;
+            finalCurrency = "KRW";
+            targetChannelKey = paymentConfig.channelKey;
 
-            console.log(`Sending ${pixelsPayload.length} pixels to server...`);
+            console.log(`[PAYMENT] Mode: KRW(Inicis V2), Channel: ${targetChannelKey}, Amount: ${finalAmount}`);
 
-            for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
-                const chunk = pixelsPayload.slice(i, i + CHUNK_SIZE);
-                socket.emit('batch_new_pixels', chunk);
+            const paymentRequest = {
+                storeId: paymentConfig.storeId,
+                paymentId: paymentId,
+                orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
+                totalAmount: finalAmount,
+                currency: "KRW",
+                channelKey: targetChannelKey,
+                payMethod: "CARD",
+                customer: {
+                    fullName: nickname,
+                    phoneNumber: "010-0000-0000",
+                    email: currentUser ? currentUser.email : undefined,
+                }
+            };
+
+            // Mobile Redirect Logic (Only for KRW/Inicis V2)
+            if (isMobile()) {
+                console.log("[PAYMENT] Mobile environment detected. Requesting Session Recovery Token...");
+                try {
+                    const tokenRes = await fetch('/api/auth/recovery-token', { method: 'POST' });
+                    if (tokenRes.ok) {
+                        const tokenData = await tokenRes.json();
+                        if (tokenData.token) {
+                            const returnUrl = new URL(window.location.origin + window.location.pathname);
+                            returnUrl.searchParams.set('restore_session', tokenData.token);
+                            paymentRequest.redirectUrl = returnUrl.toString();
+                        }
+                    } else {
+                        paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
+                    }
+                } catch (e) {
+                    paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
+                }
             }
 
-            alert('구매가 완료되었습니다!');
+            response = await PortOne.requestPayment(paymentRequest);
+        }
 
-            // Clear pending state on successful in-context completion
-            localStorage.removeItem('pending_payment');
+        if (response.code !== undefined) {
+            console.error("Payment failed:", response); // Log full response for debugging
+            return alert(`결제 실패: ${response.message}`);
+        }
 
-            sidePanel.style.display = 'none';
+        // --- Payment Success Logic ---
+        console.log("Payment Success! Updating pixels...");
 
-            // Restore nickname to maintain logged-in state in UI
-            if (nicknameInput) {
-                nicknameInput.value = nickname;
-                nicknameInput.disabled = false;
-                nicknameInput.readOnly = true;
-                nicknameInput.style.backgroundColor = '#333';
+        // Generate Color
+        let color = '#ffffff';
+        if (idolInfo[idolGroupName]) {
+            color = idolInfo[idolGroupName].color;
+        } else {
+            let hash = 0;
+            for (let i = 0; i < idolGroupName.length; i++) {
+                hash = idolGroupName.charCodeAt(i) + ((hash << 5) - hash);
             }
+            const h = Math.abs(hash) % 360;
+            color = `hsla(${h}, 70%, 60%, 0.7)`;
+        }
 
+        const pixelsPayload = [];
+        pixelsToSend.forEach(pixel => {
+            pixelsPayload.push({
+                x: pixel.x,
+                y: pixel.y,
+                color: color,
+                idol_group_name: idolGroupName,
+                owner_nickname: nickname
+            });
+        });
+
+        // Use Batch Emit with Chunking
+        const CHUNK_SIZE = 50000;
+        const totalChunks = Math.ceil(pixelsPayload.length / CHUNK_SIZE);
+
+        console.log(`Sending ${pixelsPayload.length} pixels to server...`);
+
+        for (let i = 0; i < pixelsPayload.length; i += CHUNK_SIZE) {
+            const chunk = pixelsPayload.slice(i, i + CHUNK_SIZE);
+            socket.emit('batch_new_pixels', chunk);
+        }
+
+        alert('구매가 완료되었습니다!');
+
+        // Clear pending state on successful in-context completion
+        localStorage.removeItem('pending_payment');
+
+        sidePanel.style.display = 'none';
+
+        // Restore nickname to maintain logged-in state in UI
+        if (nicknameInput) {
+            nicknameInput.value = nickname;
+            nicknameInput.disabled = false;
+            nicknameInput.readOnly = true;
+            nicknameInput.style.backgroundColor = '#333';
+        }
+
+        selectedPixels = [];
+        draw();
+
+        // Trigger Share Card
+        setTimeout(() => {
+            generateShareCard(idolGroupName, pixelsToSend.length, color, pixelsToSend);
+        }, 500);
+
+    } catch (e) {
+        console.error("Critical Purchase Error:", e);
+        alert("Critical Purchase Error: " + e.message);
+    }
+};
+
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const mouseX = e.clientX - offsetX;
+    const mouseY = e.clientY - offsetY;
+
+    offsetX -= (mouseX * delta - mouseX);
+    offsetY -= (mouseY * delta - mouseY);
+    scale *= delta;
+    scale = Math.min(Math.max(scale, 0.0005), 20);
+    draw();
+}, { passive: false });
+
+function updateMinimap() {
+    return;
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault();
+        fitToScreen();
+        draw();
+    } else if (e.code === 'F1') {
+        e.preventDefault();
+        toggleHelpModal(true);
+    } else if (e.code === 'Escape') {
+        toggleHelpModal(false);
+    }
+});
+
+
+// --- Mobile Controls ---
+const mobileModeBtn = document.getElementById('mobile-mode-btn');
+if (mobileModeBtn) {
+    mobileModeBtn.addEventListener('click', () => {
+        isMobileSelectMode = !isMobileSelectMode;
+        if (isMobileSelectMode) {
+            mobileModeBtn.textContent = '선택';
+            mobileModeBtn.style.color = '#ff4d4d'; // Red for select mode
+            mobileModeBtn.style.borderColor = '#ff4d4d';
+        } else {
+            mobileModeBtn.textContent = '이동';
+            mobileModeBtn.style.color = '#00d4ff'; // Blue for move mode
+            mobileModeBtn.style.borderColor = '#00d4ff';
+            // Clear selection if switching back to move mode
+            isSelectingPixels = false;
             selectedPixels = [];
             draw();
-
-            // Trigger Share Card
-            setTimeout(() => {
-                generateShareCard(idolGroupName, pixelsToSend.length, color, pixelsToSend);
-            }, 500);
-
-        } catch (e) {
-            console.error("Critical Purchase Error:", e);
-            alert("Critical Purchase Error: " + e.message);
-        }
-    };
-
-    canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const mouseX = e.clientX - offsetX;
-        const mouseY = e.clientY - offsetY;
-
-        offsetX -= (mouseX * delta - mouseX);
-        offsetY -= (mouseY * delta - mouseY);
-        scale *= delta;
-        scale = Math.min(Math.max(scale, 0.0005), 20);
-        draw();
-    }, { passive: false });
-
-    function updateMinimap() {
-        return;
-    }
-
-    window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            e.preventDefault();
-            fitToScreen();
-            draw();
-        } else if (e.code === 'F1') {
-            e.preventDefault();
-            toggleHelpModal(true);
-        } else if (e.code === 'Escape') {
-            toggleHelpModal(false);
+            sidePanel.style.display = 'none';
         }
     });
 
+    // Prevent default touch actions on the button
+    mobileModeBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+}
 
-    // --- Mobile Controls ---
-    const mobileModeBtn = document.getElementById('mobile-mode-btn');
-    if (mobileModeBtn) {
-        mobileModeBtn.addEventListener('click', () => {
-            isMobileSelectMode = !isMobileSelectMode;
-            if (isMobileSelectMode) {
-                mobileModeBtn.textContent = '선택';
-                mobileModeBtn.style.color = '#ff4d4d'; // Red for select mode
-                mobileModeBtn.style.borderColor = '#ff4d4d';
-            } else {
-                mobileModeBtn.textContent = '이동';
-                mobileModeBtn.style.color = '#00d4ff'; // Blue for move mode
-                mobileModeBtn.style.borderColor = '#00d4ff';
-                // Clear selection if switching back to move mode
-                isSelectingPixels = false;
-                selectedPixels = [];
-                draw();
-                sidePanel.style.display = 'none';
-            }
-        });
+// --- Touch Event Listeners (Enhanced for Long-Press Selection) ---
+let longPressTimer = null;
+let isLongPressMode = false;
+let isMultiTouch = false; // Flag to prevent accidental clicks during pinch/zoom
+const LONG_PRESS_DURATION = 250; // ms (0.25s)
 
-        // Prevent default touch actions on the button
-        mobileModeBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // Prevent scrolling
+
+    // Multi-touch Detection
+    if (e.touches.length > 1) {
+        isMultiTouch = true;
     }
 
-    // --- Touch Event Listeners (Enhanced for Long-Press Selection) ---
-    let longPressTimer = null;
-    let isLongPressMode = false;
-    let isMultiTouch = false; // Flag to prevent accidental clicks during pinch/zoom
-    const LONG_PRESS_DURATION = 250; // ms (0.25s)
+    if (e.touches.length === 1) {
+        // If coming from a multi-touch state, ignore this "single" touch start until reset
+        if (isMultiTouch) return;
 
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Prevent scrolling
+        const touch = e.touches[0];
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
 
-        // Multi-touch Detection
-        if (e.touches.length > 1) {
-            isMultiTouch = true;
-        }
+        // Sync mouse coordinates for autoPanLoop
+        currentMouseX = touch.clientX;
+        currentMouseY = touch.clientY;
 
-        if (e.touches.length === 1) {
-            // If coming from a multi-touch state, ignore this "single" touch start until reset
-            if (isMultiTouch) return;
+        isDraggingCanvas = false;
+        isLongPressMode = false;
 
-            const touch = e.touches[0];
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
+        // Start Long Press Timer
+        longPressTimer = setTimeout(() => {
+            if (isMultiTouch) return; // Verify again
+            isLongPressMode = true;
+            if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
 
-            // Sync mouse coordinates for autoPanLoop
-            currentMouseX = touch.clientX;
-            currentMouseY = touch.clientY;
-
-            isDraggingCanvas = false;
-            isLongPressMode = false;
-
-            // Start Long Press Timer
-            longPressTimer = setTimeout(() => {
-                if (isMultiTouch) return; // Verify again
-                isLongPressMode = true;
-                if (navigator.vibrate) navigator.vibrate(50); // Haptic feedback
-
-                // Start Selection Logic (Simulate mousedown)
-                if (canvas.onmousedown) {
-                    canvas.onmousedown({
-                        clientX: touch.clientX,
-                        clientY: touch.clientY,
-                        target: canvas,
-                        ctrlKey: false, // Force select mode
-                        preventDefault: () => { }
-                    });
-                }
-            }, 150);
-
-        } else if (e.touches.length === 2) {
-            clearTimeout(longPressTimer); // Cancel long press on 2-finger interaction
-            // Start Pinch Zoom
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-        }
-    }, { passive: false });
-
-    canvas.addEventListener('touchmove', throttle((e) => {
-        e.preventDefault();
-
-        if (e.touches.length === 1) {
-            if (isMultiTouch) return; // Ignore movement if part of multi-touch gesture
-
-            const touch = e.touches[0];
-
-            // Sync mouse coordinates for autoPanLoop
-            currentMouseX = touch.clientX;
-            currentMouseY = touch.clientY;
-
-            const deltaX = touch.clientX - lastTouchX;
-            const deltaY = touch.clientY - lastTouchY;
-            const moveDist = Math.hypot(deltaX, deltaY);
-
-            // If moved significantly before long press triggers, cancel it -> Pan Mode
-            if (!isLongPressMode && moveDist > 5) {
-                clearTimeout(longPressTimer);
-                isDraggingCanvas = true;
-            }
-
-            if (isLongPressMode) {
-                // Handle Selection Drag
-                if (isSelectingPixels) {
-                    updateSelection(touch.clientX, touch.clientY);
-                }
-            } else if (isDraggingCanvas) {
-                // Handle Pan
-                offsetX += deltaX;
-                offsetY += deltaY;
-                draw();
-            }
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
-        } else if (e.touches.length === 2) {
-            clearTimeout(longPressTimer);
-            // Handle Pinch Zoom
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const currentdist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-
-            if (lastPinchDistance > 0) {
-                const zoomSpeed = 0.005;
-                const deltaZoom = (currentdist - lastPinchDistance) * zoomSpeed;
-                const zoomFactor = 1 + deltaZoom;
-                // Updated Scale Limit from 0.01 to 0.0005 to match Wheel Zoom
-                const newScale = Math.max(0.0005, Math.min(20, scale * zoomFactor));
-
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const worldX = (centerX - offsetX) / scale;
-                const worldY = (centerY - offsetY) / scale;
-
-                scale = newScale;
-                offsetX = centerX - worldX * scale;
-                offsetY = centerY - worldY * scale;
-
-                draw();
-            }
-            lastPinchDistance = currentdist;
-        }
-    }, 16), { passive: false });
-
-    canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        clearTimeout(longPressTimer); // Always clear timer
-
-        if (e.touches.length < 2) {
-            lastPinchDistance = 0;
-        }
-
-        // MULTI-TOUCH EXIT GUARD
-        if (isMultiTouch) {
-            // If all fingers are lifted, reset the flag
-            if (e.touches.length === 0) {
-                isMultiTouch = false;
-            }
-            // CRITICAL: Return immediately to prevent 'tap' execution
-            return;
-        }
-
-        if (isLongPressMode) {
-            // End Long Press Selection
-            if (isSelectingPixels) {
-                const touch = e.changedTouches[0];
-                window.onmouseup({
+            // Start Selection Logic (Simulate mousedown)
+            if (canvas.onmousedown) {
+                canvas.onmousedown({
                     clientX: touch.clientX,
                     clientY: touch.clientY,
                     target: canvas,
+                    ctrlKey: false, // Force select mode
                     preventDefault: () => { }
                 });
             }
-            isLongPressMode = false;
-            return;
+        }, 150);
+
+    } else if (e.touches.length === 2) {
+        clearTimeout(longPressTimer); // Cancel long press on 2-finger interaction
+        // Start Pinch Zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        lastPinchDistance = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', throttle((e) => {
+    e.preventDefault();
+
+    if (e.touches.length === 1) {
+        if (isMultiTouch) return; // Ignore movement if part of multi-touch gesture
+
+        const touch = e.touches[0];
+
+        // Sync mouse coordinates for autoPanLoop
+        currentMouseX = touch.clientX;
+        currentMouseY = touch.clientY;
+
+        const deltaX = touch.clientX - lastTouchX;
+        const deltaY = touch.clientY - lastTouchY;
+        const moveDist = Math.hypot(deltaX, deltaY);
+
+        // If moved significantly before long press triggers, cancel it -> Pan Mode
+        if (!isLongPressMode && moveDist > 5) {
+            clearTimeout(longPressTimer);
+            isDraggingCanvas = true;
         }
 
-        if (isDraggingCanvas) {
-            isDraggingCanvas = false;
-            return;
+        if (isLongPressMode) {
+            // Handle Selection Drag
+            if (isSelectingPixels) {
+                updateSelection(touch.clientX, touch.clientY);
+            }
+        } else if (isDraggingCanvas) {
+            // Handle Pan
+            offsetX += deltaX;
+            offsetY += deltaY;
+            draw();
         }
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
+    } else if (e.touches.length === 2) {
+        clearTimeout(longPressTimer);
+        // Handle Pinch Zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentdist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
 
-        // Tap Detection (No drag, No long press)
-        if (e.changedTouches.length === 1) {
+        if (lastPinchDistance > 0) {
+            const zoomSpeed = 0.005;
+            const deltaZoom = (currentdist - lastPinchDistance) * zoomSpeed;
+            const zoomFactor = 1 + deltaZoom;
+            // Updated Scale Limit from 0.01 to 0.0005 to match Wheel Zoom
+            const newScale = Math.max(0.0005, Math.min(20, scale * zoomFactor));
+
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const worldX = (centerX - offsetX) / scale;
+            const worldY = (centerY - offsetY) / scale;
+
+            scale = newScale;
+            offsetX = centerX - worldX * scale;
+            offsetY = centerY - worldY * scale;
+
+            draw();
+        }
+        lastPinchDistance = currentdist;
+    }
+}, 16), { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    clearTimeout(longPressTimer); // Always clear timer
+
+    if (e.touches.length < 2) {
+        lastPinchDistance = 0;
+    }
+
+    // MULTI-TOUCH EXIT GUARD
+    if (isMultiTouch) {
+        // If all fingers are lifted, reset the flag
+        if (e.touches.length === 0) {
+            isMultiTouch = false;
+        }
+        // CRITICAL: Return immediately to prevent 'tap' execution
+        return;
+    }
+
+    if (isLongPressMode) {
+        // End Long Press Selection
+        if (isSelectingPixels) {
             const touch = e.changedTouches[0];
             window.onmouseup({
                 clientX: touch.clientX,
@@ -2402,526 +2379,545 @@ subscribeButton.onclick = async () => {
                 preventDefault: () => { }
             });
         }
-    });
-
-
-
-
-    // --- Share Card Feature ---
-    // --- Share Card Feature ---
-    // Move event binding to a safe check loop or function
-    function setupShareHandlers() {
-        const closeShareBtn = document.getElementById('close-share-btn');
-        const downloadCardBtn = document.getElementById('download-card-btn');
-        const shareModal = document.getElementById('share-modal');
-        const shareCardImg = document.getElementById('share-card-img');
-
-        if (closeShareBtn && shareModal) {
-            closeShareBtn.addEventListener('click', () => {
-                shareModal.style.display = 'none';
-            });
-        }
-
-        if (downloadCardBtn && shareCardImg) {
-            downloadCardBtn.addEventListener('click', () => {
-                const link = document.createElement('a');
-                link.download = `idolpixel-share-${Date.now()}.png`;
-                link.href = shareCardImg.src;
-                link.click();
-            });
-        }
+        isLongPressMode = false;
+        return;
     }
-    // Try to setup immediately, and also on load
-    setupShareHandlers();
-    window.addEventListener('DOMContentLoaded', setupShareHandlers);
-    window.addEventListener('load', setupShareHandlers);
 
-    function generateShareCard(idolName, pixelCount, baseColor, purchasedPixels) {
-        console.log(`[ShareCard] Generating for ${idolName}, count: ${pixelCount}, pixels: ${purchasedPixels ? purchasedPixels.length : 0}`);
+    if (isDraggingCanvas) {
+        isDraggingCanvas = false;
+        return;
+    }
 
-        // Dynamic Retrieval to prevent null errors
-        const shareModal = document.getElementById('share-modal');
-        const shareCardImg = document.getElementById('share-card-img');
+    // Tap Detection (No drag, No long press)
+    if (e.changedTouches.length === 1) {
+        const touch = e.changedTouches[0];
+        window.onmouseup({
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            target: canvas,
+            preventDefault: () => { }
+        });
+    }
+});
 
-        if (!shareModal || !shareCardImg) {
-            console.error("[ShareCard] Modal elements not found in DOM!");
-            return;
-        }
 
-        const width = 600;
-        const height = 400;
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = width;
-        offCanvas.height = height;
-        const ctx = offCanvas.getContext('2d');
 
-        // 2. Draw Background
-        baseColor = baseColor || '#333';
-        ctx.fillStyle = '#1a1f2c';
-        ctx.fillRect(0, 0, width, height);
 
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, baseColor);
-        gradient.addColorStop(1, '#000000');
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-        ctx.globalAlpha = 1.0;
+// --- Share Card Feature ---
+// --- Share Card Feature ---
+// Move event binding to a safe check loop or function
+function setupShareHandlers() {
+    const closeShareBtn = document.getElementById('close-share-btn');
+    const downloadCardBtn = document.getElementById('download-card-btn');
+    const shareModal = document.getElementById('share-modal');
+    const shareCardImg = document.getElementById('share-card-img');
 
-        // 3. Draw Map Snapshot (Smart Zoom + Isolated View)
-        const mapWidth = 560;
-        const mapHeight = 220;
-        const mapX = 20;
-        const mapY = 100;
+    if (closeShareBtn && shareModal) {
+        closeShareBtn.addEventListener('click', () => {
+            shareModal.style.display = 'none';
+        });
+    }
 
-        ctx.save();
-        ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(mapX, mapY, mapWidth, mapHeight, 10);
-        } else {
-            ctx.rect(mapX, mapY, mapWidth, mapHeight);
-        }
-        ctx.clip();
+    if (downloadCardBtn && shareCardImg) {
+        downloadCardBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `idolpixel-share-${Date.now()}.png`;
+            link.href = shareCardImg.src;
+            link.click();
+        });
+    }
+}
+// Try to setup immediately, and also on load
+setupShareHandlers();
+window.addEventListener('DOMContentLoaded', setupShareHandlers);
+window.addEventListener('load', setupShareHandlers);
 
-        // Draw Dark Background for Map Area
-        ctx.fillStyle = '#111';
-        ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
+function generateShareCard(idolName, pixelCount, baseColor, purchasedPixels) {
+    console.log(`[ShareCard] Generating for ${idolName}, count: ${pixelCount}, pixels: ${purchasedPixels ? purchasedPixels.length : 0}`);
 
-        // --- SMART ZOOM LOGIC ---
-        if (purchasedPixels && purchasedPixels.length > 0) {
-            // 1. Calculate Bounding Box of Purchased Pixels
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            purchasedPixels.forEach(p => {
-                if (p.x < minX) minX = p.x;
-                if (p.x > maxX) maxX = p.x;
-                if (p.y < minY) minY = p.y;
-                if (p.y > maxY) maxY = p.y;
-            });
+    // Dynamic Retrieval to prevent null errors
+    const shareModal = document.getElementById('share-modal');
+    const shareCardImg = document.getElementById('share-card-img');
 
-            // 2. Add Padding (e.g., 50 units around)
-            // If single pixel, we want a nice zoom, not infinite.
-            const PADDING = 60;
-            minX -= PADDING;
-            minY -= PADDING;
-            maxX += PADDING;
-            maxY += PADDING;
+    if (!shareModal || !shareCardImg) {
+        console.error("[ShareCard] Modal elements not found in DOM!");
+        return;
+    }
 
-            const boxWidth = maxX - minX;
-            const boxHeight = maxY - minY;
+    const width = 600;
+    const height = 400;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = width;
+    offCanvas.height = height;
+    const ctx = offCanvas.getContext('2d');
 
-            // 3. Calculate Scale to Fit into Map Area
-            // Maintain Aspect Ratio, fit fully inside
-            const scaleX = mapWidth / boxWidth;
-            const scaleY = mapHeight / boxHeight;
-            const drawScale = Math.min(scaleX, scaleY); // How many CARD pixels per WORLD unit
+    // 2. Draw Background
+    baseColor = baseColor || '#333';
+    ctx.fillStyle = '#1a1f2c';
+    ctx.fillRect(0, 0, width, height);
 
-            // 4. Center the drawing
-            // offset inside the map rect
-            const drawOffsetX = (mapWidth - (boxWidth * drawScale)) / 2;
-            const drawOffsetY = (mapHeight - (boxHeight * drawScale)) / 2;
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, baseColor);
+    gradient.addColorStop(1, '#000000');
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+    ctx.globalAlpha = 1.0;
 
-            // 5. Render FILTERED Pixels
-            // Calculate pixel size - ensure minimum visibility
-            const pSize = Math.max(20 * drawScale, 0.5); // Minimum 0.5px to ensure visibility
+    // 3. Draw Map Snapshot (Smart Zoom + Isolated View)
+    const mapWidth = 560;
+    const mapHeight = 220;
+    const mapX = 20;
+    const mapY = 100;
 
-            // For very large pixel counts, use sampling to improve performance
-            const shouldSample = purchasedPixels.length > 10000;
-            const sampleRate = shouldSample ? Math.ceil(purchasedPixels.length / 5000) : 1;
+    ctx.save();
+    ctx.beginPath();
+    if (ctx.roundRect) {
+        ctx.roundRect(mapX, mapY, mapWidth, mapHeight, 10);
+    } else {
+        ctx.rect(mapX, mapY, mapWidth, mapHeight);
+    }
+    ctx.clip();
 
-            console.log(`[ShareCard] Rendering ${purchasedPixels.length} pixels, scale: ${drawScale.toFixed(4)}, pixelSize: ${pSize.toFixed(2)}px, sampling: ${shouldSample ? `1/${sampleRate}` : 'none'}`);
+    // Draw Dark Background for Map Area
+    ctx.fillStyle = '#111';
+    ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
 
-            // Draw Relevant Pixels
-            // Draw Relevant Pixels
-            let renderedCount = 0;
+    // --- SMART ZOOM LOGIC ---
+    if (purchasedPixels && purchasedPixels.length > 0) {
+        // 1. Calculate Bounding Box of Purchased Pixels
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        purchasedPixels.forEach(p => {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+        });
 
-            // FIX: Iterate purchasedPixels directly to guarantee rendering without waiting for socket
-            const pixelsToDraw = purchasedPixels || [];
+        // 2. Add Padding (e.g., 50 units around)
+        // If single pixel, we want a nice zoom, not infinite.
+        const PADDING = 60;
+        minX -= PADDING;
+        minY -= PADDING;
+        maxX += PADDING;
+        maxY += PADDING;
 
-            pixelsToDraw.forEach(pixel => {
-                // Filter: Only draw if within our Viewport Box (Should be always true if minX/maxX calc is correct)
-                if (pixel.x >= minX && pixel.x <= maxX && pixel.y >= minY && pixel.y <= maxY) {
+        const boxWidth = maxX - minX;
+        const boxHeight = maxY - minY;
 
-                    // Apply sampling for performance
-                    if (shouldSample && renderedCount % sampleRate !== 0) {
-                        renderedCount++;
-                        return;
-                    }
+        // 3. Calculate Scale to Fit into Map Area
+        // Maintain Aspect Ratio, fit fully inside
+        const scaleX = mapWidth / boxWidth;
+        const scaleY = mapHeight / boxHeight;
+        const drawScale = Math.min(scaleX, scaleY); // How many CARD pixels per WORLD unit
 
-                    const screenX = mapX + drawOffsetX + (pixel.x - minX) * drawScale;
-                    const screenY = mapY + drawOffsetY + (pixel.y - minY) * drawScale;
+        // 4. Center the drawing
+        // offset inside the map rect
+        const drawOffsetX = (mapWidth - (boxWidth * drawScale)) / 2;
+        const drawOffsetY = (mapHeight - (boxHeight * drawScale)) / 2;
 
-                    // Draw Pixel
-                    ctx.fillStyle = baseColor; // Use passed baseColor as pixels might not have color prop yet
-                    // Use ceil to prevent gaps, ensure at least 1px
-                    const effectiveSize = Math.max(1, Math.ceil(pSize));
-                    ctx.fillRect(screenX, screenY, effectiveSize, effectiveSize);
+        // 5. Render FILTERED Pixels
+        // Calculate pixel size - ensure minimum visibility
+        const pSize = Math.max(20 * drawScale, 0.5); // Minimum 0.5px to ensure visibility
+
+        // For very large pixel counts, use sampling to improve performance
+        const shouldSample = purchasedPixels.length > 10000;
+        const sampleRate = shouldSample ? Math.ceil(purchasedPixels.length / 5000) : 1;
+
+        console.log(`[ShareCard] Rendering ${purchasedPixels.length} pixels, scale: ${drawScale.toFixed(4)}, pixelSize: ${pSize.toFixed(2)}px, sampling: ${shouldSample ? `1/${sampleRate}` : 'none'}`);
+
+        // Draw Relevant Pixels
+        // Draw Relevant Pixels
+        let renderedCount = 0;
+
+        // FIX: Iterate purchasedPixels directly to guarantee rendering without waiting for socket
+        const pixelsToDraw = purchasedPixels || [];
+
+        pixelsToDraw.forEach(pixel => {
+            // Filter: Only draw if within our Viewport Box (Should be always true if minX/maxX calc is correct)
+            if (pixel.x >= minX && pixel.x <= maxX && pixel.y >= minY && pixel.y <= maxY) {
+
+                // Apply sampling for performance
+                if (shouldSample && renderedCount % sampleRate !== 0) {
                     renderedCount++;
-                }
-            });
-
-            console.log(`[ShareCard] Rendered ${renderedCount} pixels on card`);
-
-        } else {
-            // Fallback if no specific pixels passed (e.g. initial view?)
-            // Just draw what was on canvas
-            ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, mapX, mapY, mapWidth, mapHeight);
-        }
-
-        // Inner Border
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
-        ctx.restore();
-
-        // 4. Text Overlay (Refined Layout)
-        // 4. Text Overlay (Refined Layout)
-        ctx.textAlign = 'left';
-        ctx.fillStyle = '#ffffff';
-
-        if (i18n.locale === 'en') {
-            // --- English Layout ---
-            // Line 1: "Extended {Idol}'s Territory"
-            ctx.font = 'bold 24px sans-serif'; // Slightly smaller to fit long names
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText("Extended ", 30, 50);
-            const prefixWidth = ctx.measureText("Extended ").width;
-
-            ctx.fillStyle = baseColor;
-            ctx.fillText(`${idolName}'s`, 30 + prefixWidth, 50);
-            const nameWidth = ctx.measureText(`${idolName}'s`).width;
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(" Territory", 30 + prefixWidth + nameWidth, 50);
-
-            // Line 2: "by {Count} Px! 🚩"
-            ctx.font = 'bold 36px sans-serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText("by ", 30, 88);
-            const byWidth = ctx.measureText("by ").width;
-
-            ctx.fillStyle = '#00d4ff'; // Blue highlight
-            ctx.fillText(`${pixelCount} Px`, 30 + byWidth, 88);
-            const countWidth = ctx.measureText(`${pixelCount} Px`).width;
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText("! 🚩", 30 + byWidth + countWidth, 88);
-
-        } else {
-            // --- Korean Layout (Original) ---
-            // Line 1: "{Idol} 의 영토를"
-            ctx.font = 'bold 28px sans-serif';
-            ctx.fillStyle = baseColor; // Use idol color for name
-            ctx.fillText(`${idolName}`, 30, 50);
-            const nameWidth = ctx.measureText(`${idolName}`).width;
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(`의 영토를`, 30 + nameWidth + 5, 50);
-
-            // Line 2: "{Count} Px 만큼 더 넓혔습니다! 🚩"
-            ctx.font = 'bold 36px sans-serif';
-            ctx.fillStyle = '#00d4ff'; // Blue highlight
-            ctx.fillText(`${pixelCount} Px`, 30, 88);
-            const countWidth = ctx.measureText(`${pixelCount} Px`).width;
-
-            ctx.font = 'bold 24px sans-serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(`만큼 더 넓혔습니다! 🚩`, 30 + countWidth + 10, 85);
-        }
-
-        // Footer
-        ctx.textAlign = 'right';
-
-        // Brand Name
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.font = 'bold 14px sans-serif';
-        ctx.fillText('FANDOM PIXEL', width - 20, height - 28);
-
-        // URL (New)
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.font = '12px sans-serif';
-        ctx.fillText('www.fandom-pixel.com', width - 20, height - 10);
-
-        // 5. Output
-        shareCardImg.src = offCanvas.toDataURL('image/png');
-        shareModal.style.display = 'flex';
-    }
-
-    // --- Activity Ticker Logic ---
-    function showTickerMessage(data) {
-        const activityTicker = document.getElementById('activity-ticker');
-        if (!activityTicker) {
-            console.error("[Ticker] Element #activity-ticker not found!");
-            return;
-        }
-
-        // Deduplicate or Aggregate? 
-        // For now, let's just show raw events but aggregated by batch manually if needed.
-        // The server emits 'batch_pixel_update' with an array of pixels.
-
-        // Group by User + Idol to create a summary message
-        const summary = {}; // Key: "User:Idol" -> Count
-
-        data.forEach(p => {
-            const key = `${p.owner_nickname}:${p.idol_group_name}`;
-            if (!summary[key]) summary[key] = 0;
-            summary[key]++;
-        });
-
-        Object.keys(summary).forEach(key => {
-            const [nickname, idolName] = key.split(':');
-            const count = summary[key];
-
-            const row = document.createElement('div');
-            row.style.background = 'rgba(0, 212, 255, 0.1)';
-            row.style.borderLeft = '3px solid #00d4ff';
-            row.style.padding = '8px 12px';
-            row.style.borderRadius = '4px';
-            row.style.color = '#fff';
-            row.style.fontSize = '14px';
-            row.style.textShadow = '0 1px 2px black';
-            row.style.animation = 'slideUpFade 5s forwards';
-
-            // Format: "Just now, [User] claimed [Count] pixels of [Idol]!"
-            const user = `<strong>${nickname}</strong>`;
-            const idol = `<strong>${idolName}</strong>`;
-            const formattedCount = `<strong>${count}</strong>`;
-
-            row.innerHTML = `${i18n.t('messages.ticker_prefix')} ${user}${i18n.t('messages.ticker_claimed')}${idol}${i18n.t('messages.ticker_pixels')}${formattedCount}${i18n.t('messages.ticker_suffix')}`;
-
-            activityTicker.appendChild(row);
-
-            // Remove after animation (5s total: 0.4s slide + 4.1s wait + 0.5s fade)
-            setTimeout(() => {
-                if (row.parentNode) row.parentNode.removeChild(row);
-            }, 5000);
-        });
-    }
-
-    // Socket Listeners for Ticker
-    socket.on('batch_pixel_update', (pixels) => {
-        console.log("[Ticker] Received batch update:", pixels.length);
-        if (pixels && pixels.length > 0) {
-            showTickerMessage(pixels);
-        }
-    });
-
-    // Also listen for singular updates (just in case legacy path is used)
-    socket.on('pixel_update', (data) => {
-        console.log("[Ticker] Received single update:", data);
-        if (data) {
-            showTickerMessage([data]);
-        }
-    });
-
-    // Test Trigger on Load (Remove before production if annoying, but good for confirmation)
-    /*
-    setTimeout(() => {
-        showTickerMessage([{
-            owner_nickname: '시스템',
-            idol_group_name: 'Fandom Pixel',
-            count: 1
-        }]);
-    }, 2000);
-    */
-
-
-
-    // --- HISTORY / LOG FEATURE ---
-    const historyBtn = document.getElementById('history-btn');
-    const historyModal = document.getElementById('history-modal');
-    const closeHistoryBtn = document.getElementById('close-history-btn');
-    const historyList = document.getElementById('history-list');
-
-    if (historyBtn) {
-        historyBtn.onclick = () => {
-            historyModal.style.display = 'flex';
-            fetchHistory();
-        };
-    }
-
-    if (closeHistoryBtn) {
-        closeHistoryBtn.onclick = () => {
-            historyModal.style.display = 'none';
-        };
-    }
-
-    // Close on outside click
-    window.addEventListener('click', (e) => {
-        if (e.target === historyModal) {
-            historyModal.style.display = 'none';
-        }
-    });
-
-    function fetchHistory() {
-        const historyList = document.getElementById('history-list');
-        if (!historyList) return;
-
-        historyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">로딩 중...</td></tr>';
-
-        fetch('/api/history')
-            .then(res => {
-                if (res.status === 401) throw new Error('로그인이 필요합니다.');
-                if (!res.ok) throw new Error('내역을 불러오는데 실패했습니다.');
-                return res.json();
-            })
-            .then(data => {
-                historyList.innerHTML = '';
-                if (data.length === 0) {
-                    historyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #aaa;">구매 내역이 없습니다.</td></tr>';
                     return;
                 }
 
-                data.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                const screenX = mapX + drawOffsetX + (pixel.x - minX) * drawScale;
+                const screenY = mapY + drawOffsetY + (pixel.y - minY) * drawScale;
 
-                    // Format Dates (Simple YYYY-MM-DD HH:MM)
-                    const dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
-                    const purchased = item.purchased_at ? new Date(item.purchased_at).toLocaleString('ko-KR', dateOpts) : '-';
+                // Draw Pixel
+                ctx.fillStyle = baseColor; // Use passed baseColor as pixels might not have color prop yet
+                // Use ceil to prevent gaps, ensure at least 1px
+                const effectiveSize = Math.max(1, Math.ceil(pSize));
+                ctx.fillRect(screenX, screenY, effectiveSize, effectiveSize);
+                renderedCount++;
+            }
+        });
 
-                    tr.innerHTML = `
+        console.log(`[ShareCard] Rendered ${renderedCount} pixels on card`);
+
+    } else {
+        // Fallback if no specific pixels passed (e.g. initial view?)
+        // Just draw what was on canvas
+        ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height, mapX, mapY, mapWidth, mapHeight);
+    }
+
+    // Inner Border
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
+    ctx.restore();
+
+    // 4. Text Overlay (Refined Layout)
+    // 4. Text Overlay (Refined Layout)
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ffffff';
+
+    if (i18n.locale === 'en') {
+        // --- English Layout ---
+        // Line 1: "Extended {Idol}'s Territory"
+        ctx.font = 'bold 24px sans-serif'; // Slightly smaller to fit long names
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("Extended ", 30, 50);
+        const prefixWidth = ctx.measureText("Extended ").width;
+
+        ctx.fillStyle = baseColor;
+        ctx.fillText(`${idolName}'s`, 30 + prefixWidth, 50);
+        const nameWidth = ctx.measureText(`${idolName}'s`).width;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(" Territory", 30 + prefixWidth + nameWidth, 50);
+
+        // Line 2: "by {Count} Px! 🚩"
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("by ", 30, 88);
+        const byWidth = ctx.measureText("by ").width;
+
+        ctx.fillStyle = '#00d4ff'; // Blue highlight
+        ctx.fillText(`${pixelCount} Px`, 30 + byWidth, 88);
+        const countWidth = ctx.measureText(`${pixelCount} Px`).width;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText("! 🚩", 30 + byWidth + countWidth, 88);
+
+    } else {
+        // --- Korean Layout (Original) ---
+        // Line 1: "{Idol} 의 영토를"
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillStyle = baseColor; // Use idol color for name
+        ctx.fillText(`${idolName}`, 30, 50);
+        const nameWidth = ctx.measureText(`${idolName}`).width;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`의 영토를`, 30 + nameWidth + 5, 50);
+
+        // Line 2: "{Count} Px 만큼 더 넓혔습니다! 🚩"
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillStyle = '#00d4ff'; // Blue highlight
+        ctx.fillText(`${pixelCount} Px`, 30, 88);
+        const countWidth = ctx.measureText(`${pixelCount} Px`).width;
+
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`만큼 더 넓혔습니다! 🚩`, 30 + countWidth + 10, 85);
+    }
+
+    // Footer
+    ctx.textAlign = 'right';
+
+    // Brand Name
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('FANDOM PIXEL', width - 20, height - 28);
+
+    // URL (New)
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('www.fandom-pixel.com', width - 20, height - 10);
+
+    // 5. Output
+    shareCardImg.src = offCanvas.toDataURL('image/png');
+    shareModal.style.display = 'flex';
+}
+
+// --- Activity Ticker Logic ---
+function showTickerMessage(data) {
+    const activityTicker = document.getElementById('activity-ticker');
+    if (!activityTicker) {
+        console.error("[Ticker] Element #activity-ticker not found!");
+        return;
+    }
+
+    // Deduplicate or Aggregate? 
+    // For now, let's just show raw events but aggregated by batch manually if needed.
+    // The server emits 'batch_pixel_update' with an array of pixels.
+
+    // Group by User + Idol to create a summary message
+    const summary = {}; // Key: "User:Idol" -> Count
+
+    data.forEach(p => {
+        const key = `${p.owner_nickname}:${p.idol_group_name}`;
+        if (!summary[key]) summary[key] = 0;
+        summary[key]++;
+    });
+
+    Object.keys(summary).forEach(key => {
+        const [nickname, idolName] = key.split(':');
+        const count = summary[key];
+
+        const row = document.createElement('div');
+        row.style.background = 'rgba(0, 212, 255, 0.1)';
+        row.style.borderLeft = '3px solid #00d4ff';
+        row.style.padding = '8px 12px';
+        row.style.borderRadius = '4px';
+        row.style.color = '#fff';
+        row.style.fontSize = '14px';
+        row.style.textShadow = '0 1px 2px black';
+        row.style.animation = 'slideUpFade 5s forwards';
+
+        // Format: "Just now, [User] claimed [Count] pixels of [Idol]!"
+        const user = `<strong>${nickname}</strong>`;
+        const idol = `<strong>${idolName}</strong>`;
+        const formattedCount = `<strong>${count}</strong>`;
+
+        row.innerHTML = `${i18n.t('messages.ticker_prefix')} ${user}${i18n.t('messages.ticker_claimed')}${idol}${i18n.t('messages.ticker_pixels')}${formattedCount}${i18n.t('messages.ticker_suffix')}`;
+
+        activityTicker.appendChild(row);
+
+        // Remove after animation (5s total: 0.4s slide + 4.1s wait + 0.5s fade)
+        setTimeout(() => {
+            if (row.parentNode) row.parentNode.removeChild(row);
+        }, 5000);
+    });
+}
+
+// Socket Listeners for Ticker
+socket.on('batch_pixel_update', (pixels) => {
+    console.log("[Ticker] Received batch update:", pixels.length);
+    if (pixels && pixels.length > 0) {
+        showTickerMessage(pixels);
+    }
+});
+
+// Also listen for singular updates (just in case legacy path is used)
+socket.on('pixel_update', (data) => {
+    console.log("[Ticker] Received single update:", data);
+    if (data) {
+        showTickerMessage([data]);
+    }
+});
+
+// Test Trigger on Load (Remove before production if annoying, but good for confirmation)
+/*
+setTimeout(() => {
+    showTickerMessage([{
+        owner_nickname: '시스템',
+        idol_group_name: 'Fandom Pixel',
+        count: 1
+    }]);
+}, 2000);
+*/
+
+
+
+// --- HISTORY / LOG FEATURE ---
+const historyBtn = document.getElementById('history-btn');
+const historyModal = document.getElementById('history-modal');
+const closeHistoryBtn = document.getElementById('close-history-btn');
+const historyList = document.getElementById('history-list');
+
+if (historyBtn) {
+    historyBtn.onclick = () => {
+        historyModal.style.display = 'flex';
+        fetchHistory();
+    };
+}
+
+if (closeHistoryBtn) {
+    closeHistoryBtn.onclick = () => {
+        historyModal.style.display = 'none';
+    };
+}
+
+// Close on outside click
+window.addEventListener('click', (e) => {
+    if (e.target === historyModal) {
+        historyModal.style.display = 'none';
+    }
+});
+
+function fetchHistory() {
+    const historyList = document.getElementById('history-list');
+    if (!historyList) return;
+
+    historyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px;">로딩 중...</td></tr>';
+
+    fetch('/api/history')
+        .then(res => {
+            if (res.status === 401) throw new Error('로그인이 필요합니다.');
+            if (!res.ok) throw new Error('내역을 불러오는데 실패했습니다.');
+            return res.json();
+        })
+        .then(data => {
+            historyList.innerHTML = '';
+            if (data.length === 0) {
+                historyList.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #aaa;">구매 내역이 없습니다.</td></tr>';
+                return;
+            }
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+                // Format Dates (Simple YYYY-MM-DD HH:MM)
+                const dateOpts = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+                const purchased = item.purchased_at ? new Date(item.purchased_at).toLocaleString('ko-KR', dateOpts) : '-';
+
+                tr.innerHTML = `
                     <td style="padding: 10px; font-size: 13px;">${purchased}</td>
                     <td style="padding: 10px;">
                          <span style="color: ${idolInfo[item.idol_group_name]?.color || '#fff'}; font-weight:bold;">${item.idol_group_name}</span>
                     </td>
                     <td style="padding: 10px; font-weight: bold; color: #00d4ff;">${item.count}개</td>
                 `;
-                    historyList.appendChild(tr);
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                historyList.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ff6b6b;">${err.message}</td></tr>`;
+                historyList.appendChild(tr);
             });
-    }
-
-    // --- Restored Logic: Stats & Clusters ---
-
-    function recalculateStats() {
-        console.log("[Stats] Recalculating all stats...");
-        userPixelCounts.clear();
-        idolPixelCounts.clear();
-        userGroupPixelCounts.clear();
-
-        pixelMap.forEach(pixel => {
-            if (!pixel.owner_nickname) return;
-
-            const owner = pixel.owner_nickname;
-            const group = pixel.idol_group_name;
-
-            // User Count
-            userPixelCounts.set(owner, (userPixelCounts.get(owner) || 0) + 1);
-
-            if (group) {
-                // Group Count
-                idolPixelCounts.set(group, (idolPixelCounts.get(group) || 0) + 1);
-
-                // User-Group Count (Format: owner:group)
-                const userGroupKey = `${owner}:${group}`;
-                userGroupPixelCounts.set(userGroupKey, (userGroupPixelCounts.get(userGroupKey) || 0) + 1);
-            }
+        })
+        .catch(err => {
+            console.error(err);
+            historyList.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #ff6b6b;">${err.message}</td></tr>`;
         });
-        console.log(`[Stats] Recalculation complete. PixelMap size: ${pixelMap.size}, Unique Owners: ${userPixelCounts.size}`);
-    }
+}
 
-    let clusterUpdateTimeout = null;
-    function requestClusterUpdate() {
-        if (clusterUpdateTimeout) clearTimeout(clusterUpdateTimeout);
-        clusterUpdateTimeout = setTimeout(() => {
-            recalculateClusters();
-            draw();
-        }, 500); // Debounce 500ms
-    }
+// --- Restored Logic: Stats & Clusters ---
 
-    function recalculateClusters() {
-        // Simple clustering: Merge adjacent pixels of same group
-        // For visualization labels
-        clusters = [];
-        const visited = new Set();
+function recalculateStats() {
+    console.log("[Stats] Recalculating all stats...");
+    userPixelCounts.clear();
+    idolPixelCounts.clear();
+    userGroupPixelCounts.clear();
 
-        pixelMap.forEach(pixel => {
-            const key = `${pixel.x},${pixel.y}`;
-            if (visited.has(key) || !pixel.idol_group_name) return;
+    pixelMap.forEach(pixel => {
+        if (!pixel.owner_nickname) return;
 
-            const groupName = pixel.idol_group_name;
-            const clusterPixels = [];
-            const queue = [pixel];
-            visited.add(key);
+        const owner = pixel.owner_nickname;
+        const group = pixel.idol_group_name;
 
-            let minX = pixel.x, maxX = pixel.x, minY = pixel.y, maxY = pixel.y;
+        // User Count
+        userPixelCounts.set(owner, (userPixelCounts.get(owner) || 0) + 1);
 
-            while (queue.length > 0) {
-                const p = queue.shift();
-                clusterPixels.push(p);
+        if (group) {
+            // Group Count
+            idolPixelCounts.set(group, (idolPixelCounts.get(group) || 0) + 1);
 
-                minX = Math.min(minX, p.x);
-                maxX = Math.max(maxX, p.x);
-                minY = Math.min(minY, p.y);
-                maxY = Math.max(maxY, p.y);
+            // User-Group Count (Format: owner:group)
+            const userGroupKey = `${owner}:${group}`;
+            userGroupPixelCounts.set(userGroupKey, (userGroupPixelCounts.get(userGroupKey) || 0) + 1);
+        }
+    });
+    console.log(`[Stats] Recalculation complete. PixelMap size: ${pixelMap.size}, Unique Owners: ${userPixelCounts.size}`);
+}
 
-                // Check neighbors (4-connectivity)
-                const neighbors = [
-                    { x: p.x + GRID_SIZE, y: p.y },
-                    { x: p.x - GRID_SIZE, y: p.y },
-                    { x: p.x, y: p.y + GRID_SIZE },
-                    { x: p.x, y: p.y - GRID_SIZE }
-                ];
+let clusterUpdateTimeout = null;
+function requestClusterUpdate() {
+    if (clusterUpdateTimeout) clearTimeout(clusterUpdateTimeout);
+    clusterUpdateTimeout = setTimeout(() => {
+        recalculateClusters();
+        draw();
+    }, 500); // Debounce 500ms
+}
 
-                neighbors.forEach(n => {
-                    const nKey = `${n.x},${n.y}`;
-                    if (!visited.has(nKey) && pixelMap.has(nKey)) {
-                        const neighborPixel = pixelMap.get(nKey);
-                        if (neighborPixel.idol_group_name === groupName) {
-                            visited.add(nKey);
-                            queue.push(neighborPixel);
-                        }
+function recalculateClusters() {
+    // Simple clustering: Merge adjacent pixels of same group
+    // For visualization labels
+    clusters = [];
+    const visited = new Set();
+
+    pixelMap.forEach(pixel => {
+        const key = `${pixel.x},${pixel.y}`;
+        if (visited.has(key) || !pixel.idol_group_name) return;
+
+        const groupName = pixel.idol_group_name;
+        const clusterPixels = [];
+        const queue = [pixel];
+        visited.add(key);
+
+        let minX = pixel.x, maxX = pixel.x, minY = pixel.y, maxY = pixel.y;
+
+        while (queue.length > 0) {
+            const p = queue.shift();
+            clusterPixels.push(p);
+
+            minX = Math.min(minX, p.x);
+            maxX = Math.max(maxX, p.x);
+            minY = Math.min(minY, p.y);
+            maxY = Math.max(maxY, p.y);
+
+            // Check neighbors (4-connectivity)
+            const neighbors = [
+                { x: p.x + GRID_SIZE, y: p.y },
+                { x: p.x - GRID_SIZE, y: p.y },
+                { x: p.x, y: p.y + GRID_SIZE },
+                { x: p.x, y: p.y - GRID_SIZE }
+            ];
+
+            neighbors.forEach(n => {
+                const nKey = `${n.x},${n.y}`;
+                if (!visited.has(nKey) && pixelMap.has(nKey)) {
+                    const neighborPixel = pixelMap.get(nKey);
+                    if (neighborPixel.idol_group_name === groupName) {
+                        visited.add(nKey);
+                        queue.push(neighborPixel);
                     }
-                });
-            }
+                }
+            });
+        }
 
-            // Only label significant clusters
-            if (clusterPixels.length >= 1) { // Changed from 5 to 1 to show all groups
-                clusters.push({
-                    name: groupName,
-                    x: (minX + maxX) / 2,
-                    y: (minY + maxY) / 2,
-                    count: clusterPixels.length,
-                    width: maxX - minX + GRID_SIZE,
-                    height: maxY - minY + GRID_SIZE,
-                    minX: minX, // Ensure these are saved for culling
-                    minY: minY,
-                    maxX: maxX + GRID_SIZE,
-                    maxY: maxY + GRID_SIZE
-                });
-            }
-        });
-        // console.log(`[Clusters] Calculated ${clusters.length} clusters`);
-    }
+        // Only label significant clusters
+        if (clusterPixels.length >= 1) { // Changed from 5 to 1 to show all groups
+            clusters.push({
+                name: groupName,
+                x: (minX + maxX) / 2,
+                y: (minY + maxY) / 2,
+                count: clusterPixels.length,
+                width: maxX - minX + GRID_SIZE,
+                height: maxY - minY + GRID_SIZE,
+                minX: minX, // Ensure these are saved for culling
+                minY: minY,
+                maxX: maxX + GRID_SIZE,
+                maxY: maxY + GRID_SIZE
+            });
+        }
+    });
+    // console.log(`[Clusters] Calculated ${clusters.length} clusters`);
+}
 
-    // --- NEW: Ranking Board (Server-side) ---
-    function updateRankingBoard() {
-        fetch('/api/ranking')
-            .then(res => res.json())
-            .then(rankingData => {
-                const rankingList = document.getElementById('ranking-list');
-                if (!rankingList) return;
-                rankingList.innerHTML = '';
+// --- NEW: Ranking Board (Server-side) ---
+function updateRankingBoard() {
+    fetch('/api/ranking')
+        .then(res => res.json())
+        .then(rankingData => {
+            const rankingList = document.getElementById('ranking-list');
+            if (!rankingList) return;
+            rankingList.innerHTML = '';
 
-                // Calculate total for percentage
-                // FIXED: Calculate total world pixels for percentage (Territory Control %)
-                const TOTAL_WORLD_CAPACITY = Math.pow(Math.floor(WORLD_SIZE / GRID_SIZE), 2);
+            // Calculate total for percentage
+            // FIXED: Calculate total world pixels for percentage (Territory Control %)
+            const TOTAL_WORLD_CAPACITY = Math.pow(Math.floor(WORLD_SIZE / GRID_SIZE), 2);
 
-                // Show Top 3 Only
-                rankingData.slice(0, 3).forEach((item, index) => {
-                    const li = document.createElement('li');
-                    const groupInfo = idolInfo[item.name] || { color: '#ccc', initials: '?' };
+            // Show Top 3 Only
+            rankingData.slice(0, 3).forEach((item, index) => {
+                const li = document.createElement('li');
+                const groupInfo = idolInfo[item.name] || { color: '#ccc', initials: '?' };
 
-                    // Percentage
-                    const percentage = TOTAL_WORLD_CAPACITY > 0 ? ((item.count / TOTAL_WORLD_CAPACITY) * 100).toFixed(4) : 0;
-                    const rankEmoji = ['🥇', '🥈', '🥉'][index] || `<span class="rank-num">${index + 1}</span>`;
+                // Percentage
+                const percentage = TOTAL_WORLD_CAPACITY > 0 ? ((item.count / TOTAL_WORLD_CAPACITY) * 100).toFixed(4) : 0;
+                const rankEmoji = ['🥇', '🥈', '🥉'][index] || `<span class="rank-num">${index + 1}</span>`;
 
-                    li.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);";
-                    li.innerHTML = `
+                li.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);";
+                li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 16px; width: 20px; text-align: center;">${rankEmoji}</span>
                         <div>
@@ -2931,190 +2927,190 @@ subscribeButton.onclick = async () => {
                     </div>
                     <div style="font-weight: bold; font-family: monospace; color: #00d4ff;">${percentage}%</div>
                 `;
-                    rankingList.appendChild(li);
-                });
-
-                if (rankingData.length === 0) {
-                    rankingList.innerHTML = '<li style="color: #666; text-align: center; padding: 10px;">아직 점령된 땅이 없습니다.</li>';
-                }
-            })
-            .catch(err => console.error("Error updating ranking:", err));
-    }
-
-    // --- Initialization Calls ---
-    updateRankingBoard();
-    setInterval(updateRankingBoard, 5000); // Refresh ranking every 5 seconds
-
-    // Ensure initial view is set
-    fitToScreen();
-
-    // Trigger initial cluster calculation after a short delay to allow chunks to load
-    // Smart Initialization: Wait for chunks to load before calculating stats
-    function checkAndRecalculate() {
-        if (chunkManager.requestQueue.length > 0 || chunkManager.activeRequests > 0) {
-            console.log(`[Loading] Queue: ${chunkManager.requestQueue.length}, Active: ${chunkManager.activeRequests}. Waiting...`);
-            setTimeout(checkAndRecalculate, 500); // Check again in 500ms
-            return;
-        }
-
-        // Safety delay to ensure final fetches processed
-        setTimeout(() => {
-            recalculateStats();
-            recalculateClusters();
-            draw();
-            console.log(`[Init] Stats & Clusters Updated. PixelMap Size: ${pixelMap.size}`);
-        }, 500);
-    }
-
-    // Start the check after a brief initial pause
-    setTimeout(checkAndRecalculate, 1000);
-
-    console.log("Main.js fully loaded and initialized.");
-
-    // --- Notice Modal Tabs ---
-    document.querySelectorAll('.notice-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Toggle Active Tab
-            document.querySelectorAll('.notice-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-
-            // Toggle Content
-            const targetId = tab.dataset.target;
-            document.querySelectorAll('.notice-content').forEach(content => {
-                content.style.display = content.id === targetId ? 'block' : 'none';
+                rankingList.appendChild(li);
             });
+
+            if (rankingData.length === 0) {
+                rankingList.innerHTML = '<li style="color: #666; text-align: center; padding: 10px;">아직 점령된 땅이 없습니다.</li>';
+            }
+        })
+        .catch(err => console.error("Error updating ranking:", err));
+}
+
+// --- Initialization Calls ---
+updateRankingBoard();
+setInterval(updateRankingBoard, 5000); // Refresh ranking every 5 seconds
+
+// Ensure initial view is set
+fitToScreen();
+
+// Trigger initial cluster calculation after a short delay to allow chunks to load
+// Smart Initialization: Wait for chunks to load before calculating stats
+function checkAndRecalculate() {
+    if (chunkManager.requestQueue.length > 0 || chunkManager.activeRequests > 0) {
+        console.log(`[Loading] Queue: ${chunkManager.requestQueue.length}, Active: ${chunkManager.activeRequests}. Waiting...`);
+        setTimeout(checkAndRecalculate, 500); // Check again in 500ms
+        return;
+    }
+
+    // Safety delay to ensure final fetches processed
+    setTimeout(() => {
+        recalculateStats();
+        recalculateClusters();
+        draw();
+        console.log(`[Init] Stats & Clusters Updated. PixelMap Size: ${pixelMap.size}`);
+    }, 500);
+}
+
+// Start the check after a brief initial pause
+setTimeout(checkAndRecalculate, 1000);
+
+console.log("Main.js fully loaded and initialized.");
+
+// --- Notice Modal Tabs ---
+document.querySelectorAll('.notice-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        // Toggle Active Tab
+        document.querySelectorAll('.notice-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Toggle Content
+        const targetId = tab.dataset.target;
+        document.querySelectorAll('.notice-content').forEach(content => {
+            content.style.display = content.id === targetId ? 'block' : 'none';
         });
     });
+});
 
-    // --- Season Timer Logic ---
-    function getSeasonInfo() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth(); // 0-11
+// --- Season Timer Logic ---
+function getSeasonInfo() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0-11
 
-        const seasonIndex = Math.floor(month / 3); // 0-3 (Q1-Q4)
-        const seasonNum = seasonIndex + 1;
+    const seasonIndex = Math.floor(month / 3); // 0-3 (Q1-Q4)
+    const seasonNum = seasonIndex + 1;
 
-        // End months: Mar(2), Jun(5), Sep(8), Dec(11)
-        const endMonth = (seasonIndex * 3) + 2;
+    // End months: Mar(2), Jun(5), Sep(8), Dec(11)
+    const endMonth = (seasonIndex * 3) + 2;
 
-        // Last day of the end month at 23:59:59
-        const endDate = new Date(year, endMonth + 1, 0);
-        endDate.setHours(23, 59, 59, 999);
+    // Last day of the end month at 23:59:59
+    const endDate = new Date(year, endMonth + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
 
-        return { seasonNum, endDate };
+    return { seasonNum, endDate };
+}
+
+function updateSeasonTimer() {
+    const { seasonNum, endDate } = getSeasonInfo();
+    const now = new Date();
+    const diff = endDate - now;
+
+    const containerEl = document.getElementById('season-timer');
+    let timerEl = document.getElementById('season-countdown');
+
+    // Dynamically update Season Number in UI
+    if (containerEl) {
+        // PRE-SEASON LOGIC: If 2026 Q1, show PRE-SEASON
+        let displaySeason = `SEASON ${seasonNum}`;
+        if (seasonNum === 1 && now.getFullYear() === 2026) {
+            displaySeason = "PRE-SEASON";
+        }
+
+        // Check if we need to update the season label (e.g. on load or season change)
+        // Use a simple check or just check the first text node? 
+        // Safer to just check if innerText starts with the expected string
+        const currentText = containerEl.textContent.trim();
+        if (!currentText.startsWith(displaySeason)) {
+            containerEl.innerHTML = `${displaySeason} <span style="font-size: 0.8em; color: #fff;">ENDS IN</span> <span id="season-countdown" style="font-family: monospace; font-size: 1.2em;">--:--:--:--</span>`;
+            timerEl = document.getElementById('season-countdown'); // Re-fetch new element
+        }
     }
 
-    function updateSeasonTimer() {
-        const { seasonNum, endDate } = getSeasonInfo();
-        const now = new Date();
-        const diff = endDate - now;
+    if (!timerEl) return;
 
-        const containerEl = document.getElementById('season-timer');
-        let timerEl = document.getElementById('season-countdown');
-
-        // Dynamically update Season Number in UI
-        if (containerEl) {
-            // PRE-SEASON LOGIC: If 2026 Q1, show PRE-SEASON
-            let displaySeason = `SEASON ${seasonNum}`;
-            if (seasonNum === 1 && now.getFullYear() === 2026) {
-                displaySeason = "PRE-SEASON";
-            }
-
-            // Check if we need to update the season label (e.g. on load or season change)
-            // Use a simple check or just check the first text node? 
-            // Safer to just check if innerText starts with the expected string
-            const currentText = containerEl.textContent.trim();
-            if (!currentText.startsWith(displaySeason)) {
-                containerEl.innerHTML = `${displaySeason} <span style="font-size: 0.8em; color: #fff;">ENDS IN</span> <span id="season-countdown" style="font-family: monospace; font-size: 1.2em;">--:--:--:--</span>`;
-                timerEl = document.getElementById('season-countdown'); // Re-fetch new element
-            }
-        }
-
-        if (!timerEl) return;
-
-        if (diff <= 0) {
-            timerEl.textContent = "SEASON ENDED";
-            timerEl.style.color = "#ff4d4d";
-            return;
-        }
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        timerEl.textContent = `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+    if (diff <= 0) {
+        timerEl.textContent = "SEASON ENDED";
+        timerEl.style.color = "#ff4d4d";
+        return;
     }
 
-    // Start Timer
-    setInterval(updateSeasonTimer, 1000);
-    updateSeasonTimer(); // Initial call
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    // --- Mobile Swipe-to-Close for Side Panel ---
-    let panelStartY = 0;
-    let isPanelDragging = false;
+    timerEl.textContent = `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+}
 
-    sidePanel.addEventListener('touchstart', (e) => {
-        if (window.innerWidth > 768) return; // Only apply on mobile where it acts as bottom sheet
-        // Only facilitate drag if at top of scroll
-        if (sidePanel.scrollTop > 5) return; // Tolerance of 5px
+// Start Timer
+setInterval(updateSeasonTimer, 1000);
+updateSeasonTimer(); // Initial call
 
-        // We don't prevent default here to allow click events to pass through if it's a tap
-        panelStartY = e.touches[0].clientY;
-        isPanelDragging = false;
-        sidePanel.style.transition = 'none'; // Disable transition during drag
-    }, { passive: true });
+// --- Mobile Swipe-to-Close for Side Panel ---
+let panelStartY = 0;
+let isPanelDragging = false;
 
-    sidePanel.addEventListener('touchmove', (e) => {
-        if (window.innerWidth > 768) return;
+sidePanel.addEventListener('touchstart', (e) => {
+    if (window.innerWidth > 768) return; // Only apply on mobile where it acts as bottom sheet
+    // Only facilitate drag if at top of scroll
+    if (sidePanel.scrollTop > 5) return; // Tolerance of 5px
 
-        // Check constraints again in case scroll changed
-        // Use a slightly larger tolerance to latch onto drag mode
-        if (sidePanel.scrollTop > 5 && !isPanelDragging) return;
+    // We don't prevent default here to allow click events to pass through if it's a tap
+    panelStartY = e.touches[0].clientY;
+    isPanelDragging = false;
+    sidePanel.style.transition = 'none'; // Disable transition during drag
+}, { passive: true });
 
-        const currentY = e.touches[0].clientY;
-        const deltaY = currentY - panelStartY;
+sidePanel.addEventListener('touchmove', (e) => {
+    if (window.innerWidth > 768) return;
 
-        if (deltaY > 0) { // Dragging Down
-            // Check if we started dragging or if we are already dragging
-            // We only want to intercept if we are pulling DOWN from the TOP.
-            // If the user was scrolling UP and hit top, then pulls down, that is valid.
+    // Check constraints again in case scroll changed
+    // Use a slightly larger tolerance to latch onto drag mode
+    if (sidePanel.scrollTop > 5 && !isPanelDragging) return;
 
-            if (e.cancelable) e.preventDefault(); // Prevent native scroll (overscroll behavior)
-            isPanelDragging = true;
-            sidePanel.style.transform = `translateY(${deltaY}px)`;
-        }
-    }, { passive: false });
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - panelStartY;
 
-    sidePanel.addEventListener('touchend', (e) => {
-        if (window.innerWidth > 768) return;
-        if (!isPanelDragging) {
-            // Clean up any potential transform if it was a tiny jiggle
-            sidePanel.style.transform = '';
-            return;
-        }
+    if (deltaY > 0) { // Dragging Down
+        // Check if we started dragging or if we are already dragging
+        // We only want to intercept if we are pulling DOWN from the TOP.
+        // If the user was scrolling UP and hit top, then pulls down, that is valid.
 
-        const currentY = e.changedTouches[0].clientY;
-        const deltaY = currentY - panelStartY;
-        const threshold = 100; // Threshold to close
+        if (e.cancelable) e.preventDefault(); // Prevent native scroll (overscroll behavior)
+        isPanelDragging = true;
+        sidePanel.style.transform = `translateY(${deltaY}px)`;
+    }
+}, { passive: false });
 
-        sidePanel.style.transition = 'transform 0.3s ease-out'; // Re-enable transition for snap
+sidePanel.addEventListener('touchend', (e) => {
+    if (window.innerWidth > 768) return;
+    if (!isPanelDragging) {
+        // Clean up any potential transform if it was a tiny jiggle
+        sidePanel.style.transform = '';
+        return;
+    }
 
-        if (deltaY > threshold) {
-            // CLOSE ACTION
-            sidePanel.style.transform = `translateY(100%)`; // Slide out completely
+    const currentY = e.changedTouches[0].clientY;
+    const deltaY = currentY - panelStartY;
+    const threshold = 100; // Threshold to close
 
-            // Wait for animation then reset state
-            setTimeout(() => {
-                selectedPixels = []; // Clear selection
-                sidePanel.style.display = 'none';
-                sidePanel.style.transform = ''; // Reset css transform for next open
-                draw(); // Redraw canvas to remove highlighting
-            }, 300);
-        } else {
-            // SNAP BACK
-            sidePanel.style.transform = `translateY(0)`;
-        }
-        isPanelDragging = false;
-    });
+    sidePanel.style.transition = 'transform 0.3s ease-out'; // Re-enable transition for snap
+
+    if (deltaY > threshold) {
+        // CLOSE ACTION
+        sidePanel.style.transform = `translateY(100%)`; // Slide out completely
+
+        // Wait for animation then reset state
+        setTimeout(() => {
+            selectedPixels = []; // Clear selection
+            sidePanel.style.display = 'none';
+            sidePanel.style.transform = ''; // Reset css transform for next open
+            draw(); // Redraw canvas to remove highlighting
+        }, 300);
+    } else {
+        // SNAP BACK
+        sidePanel.style.transform = `translateY(0)`;
+    }
+    isPanelDragging = false;
+});
