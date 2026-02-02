@@ -477,6 +477,49 @@ io.on('connection', (socket) => {
                 }
             }
 
+            // Attempt C: V2 API (PortOne) - For V2-only accounts
+            if (!paymentData && process.env.PORTONE_API_SECRET) {
+                console.log(`[VERIFY] Attempting V2 API Lookup (Secret available)`);
+                try {
+                    // Try txId (PortOne ID) first
+                    let v2TargetId = txId;
+                    if (!v2TargetId) v2TargetId = paymentId; // Fallback to MerchantID if txId missing
+
+                    const v2Res = await fetch(`https://api.portone.io/payments/${v2TargetId}`, {
+                        headers: { "Authorization": `PortOne ${process.env.PORTONE_API_SECRET}` }
+                    });
+
+                    if (v2Res.ok) {
+                        const v2Data = await v2Res.json();
+                        if (v2Data.status === 'PAID') {
+                            paymentData = {
+                                status: 'paid',
+                                amount: v2Data.amount.total,
+                                currency: v2Data.amount.currency
+                            };
+                            console.log(`[VERIFY] V2 API Verification Success via ${v2TargetId}`);
+                        } else {
+                            console.warn(`[VERIFY] V2 Payment found but status is ${v2Data.status}`);
+                        }
+                    } else {
+                        // If failed with txId, maybe try paymentId if different?
+                        if (v2TargetId !== paymentId) {
+                            const v2Res2 = await fetch(`https://api.portone.io/payments/${paymentId}`, {
+                                headers: { "Authorization": `PortOne ${process.env.PORTONE_API_SECRET}` }
+                            });
+                            if (v2Res2.ok) {
+                                const v2Data = await v2Res2.json();
+                                if (v2Data.status === 'PAID') {
+                                    paymentData = { status: 'paid', amount: v2Data.amount.total, currency: v2Data.amount.currency };
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`[VERIFY] Lookup by V2 API failed: ${e.message}`);
+                }
+            }
+
             if (!paymentData) throw new Error("Failed to find payment data via txId OR paymentId");
 
             // 3. Verify Amount & Status
