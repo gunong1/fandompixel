@@ -2151,63 +2151,40 @@ subscribeButton.onclick = async () => {
 
         } else {
             // ============================================================
-            // 2. KRW Logic (Domestic - Inicis) -> V2 SDK (PortOne) [RESTORED]
+            // 2. KRW Logic (Domestic - Inicis) -> V1 SDK (IMP) [RESTORED]
             // ============================================================
             finalAmount = totalAmount;
             finalCurrency = "KRW";
-            targetChannelKey = paymentConfig.channelKey;
 
-            console.log(`[PAYMENT] Mode: KRW(Inicis V2), Channel: ${targetChannelKey}, Amount: ${finalAmount}`);
+            console.log(`[PAYMENT] Mode: KRW(Inicis V1 Default), Amount: ${finalAmount}`);
 
-            if (typeof PortOne === 'undefined') {
-                return alert("결제 모듈(PortOne V2)이 로드되지 않았습니다. 새로고침 해주세요.");
-            }
+            const IMP = window.IMP;
+            IMP.init("imp02261832");
 
-            const paymentRequest = {
-                storeId: paymentConfig.storeId,
-                paymentId: paymentId,
-                orderName: `Idolpixel: ${pixelsToSend.length} pixels`,
-                totalAmount: finalAmount,
-                currency: "KRW",
-                channelKey: targetChannelKey,
-                payMethod: "CARD",
-                customer: {
-                    fullName: nickname,
-                    phoneNumber: "010-0000-0000",
-                    email: currentUser ? currentUser.email : undefined,
-                }
-            };
+            // Wrap V1 callback in Promise
+            response = await new Promise((resolve) => {
+                const payData = {
+                    pay_method: "card",
+                    merchant_uid: paymentId,
+                    name: `Idolpixel: ${pixelsToSend.length} pixels`,
+                    amount: finalAmount,
+                    buyer_email: currentUser ? currentUser.email : undefined,
+                    buyer_name: nickname,
+                    buyer_tel: "010-0000-0000",
+                    m_redirect_url: window.location.href
+                    // pg parameter REMOVED as requested to use Console Default
+                };
 
-            // Mobile Redirect Logic (V2)
-            if (isMobile()) {
-                console.log("[PAYMENT] Mobile environment detected. Requesting Session Recovery Token...");
-                try {
-                    const tokenRes = await fetch('/api/auth/recovery-token', { method: 'POST' });
-                    if (tokenRes.ok) {
-                        const tokenData = await tokenRes.json();
-                        if (tokenData.token) {
-                            const returnUrl = new URL(window.location.origin + window.location.pathname);
-                            returnUrl.searchParams.set('restore_session', tokenData.token);
-                            paymentRequest.redirectUrl = returnUrl.toString();
-                        }
+                IMP.request_pay(payData, function (rsp) {
+                    if (rsp.success) {
+                        console.log("[PAYMENT] V1 Success:", rsp);
+                        resolve(rsp);
                     } else {
-                        paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
+                        console.error("[PAYMENT] V1 Failure:", rsp.error_msg);
+                        resolve({ code: "V1_FAIL", message: rsp.error_msg });
                     }
-                } catch (e) {
-                    paymentRequest.redirectUrl = window.location.origin + window.location.pathname;
-                }
-            }
-
-            response = await PortOne.requestPayment(paymentRequest);
-
-            // [Important] V2 returns { paymentId, txId, ... } on success.
-            // If we are strictly using V1 API on backend, we might need txId.
-            // We'll handle this in server.js verify logic.
-            if (response.txId) {
-                console.log("[PAYMENT] Captured txId for V1 compatibility:", response.txId);
-                // We piggyback txId into response for downstream usage if needed, 
-                // though response already has it.
-            }
+                });
+            });
         }
 
         if (response.code !== undefined) {
