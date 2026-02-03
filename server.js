@@ -448,6 +448,22 @@ app.get('/api/pixels/tile', async (req, res) => {
     const tx = parseInt(req.query.x);
     const ty = parseInt(req.query.y);
     const zoom = parseInt(req.query.zoom) || 1;
+
+    // [CACHE] Check
+    const cacheKey = `tile_${tx}_${ty}_${zoom}`;
+    try {
+        const cachedImg = pixelCache.get(cacheKey);
+        if (cachedImg) {
+            res.set('Content-Type', 'image/png');
+            res.set('X-Cache-Status', 'HIT');
+            res.set('Server-Timing', 'cache;desc="Hit"');
+            res.set('Cache-Control', 'public, max-age=60');
+            return res.send(cachedImg);
+        }
+    } catch (e) {
+        console.warn("[CACHE] Tile Read Error", e);
+    }
+
     const TILE_SIZE = 256;
     const EFFECTIVE_SIZE = TILE_SIZE * zoom;
     const minX = tx * EFFECTIVE_SIZE;
@@ -456,6 +472,9 @@ app.get('/api/pixels/tile', async (req, res) => {
     const maxY = minY + EFFECTIVE_SIZE;
 
     try {
+        res.set('X-Cache-Status', 'MISS');
+        res.set('Server-Timing', 'cache;desc="Miss"');
+
         const pixels = await Pixel.find({
             x: { $gte: minX, $lt: maxX },
             y: { $gte: minY, $lt: maxY },
@@ -476,10 +495,23 @@ app.get('/api/pixels/tile', async (req, res) => {
             png.data[idx + 2] = b;
             png.data[idx + 3] = 255;
         }
-        res.set('Content-Type', 'image/png');
-        res.set('Cache-Control', 'public, max-age=60');
-        png.pack().pipe(res);
+
+        // [CACHE] Buffer the stream to cache it
+        const chunks = [];
+        const pngStream = png.pack();
+        pngStream.on('data', (chunk) => chunks.push(chunk));
+        pngStream.on('error', (err) => res.status(500).send("PNG Error"));
+        pngStream.on('end', () => {
+            const resultBuffer = Buffer.concat(chunks);
+            try { pixelCache.set(cacheKey, resultBuffer); } catch (e) { console.warn("Tile Cache Write Failed", e); }
+
+            res.set('Content-Type', 'image/png');
+            res.set('Cache-Control', 'public, max-age=60');
+            res.send(resultBuffer);
+        });
+
     } catch (err) {
+        console.error("Tile Error:", err);
         res.status(500).send("Tile Error");
     }
 });
