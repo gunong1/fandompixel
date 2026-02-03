@@ -701,8 +701,8 @@ io.on('connection', (socket) => {
                 x: p.x,
                 y: p.y,
                 color: data.idolColor,
-                idolGroupName: data.idolGroupName,
-                ownerNickname: data.nickname
+                idol_group_name: data.idolGroupName,
+                owner_nickname: data.nickname
             }));
 
             console.log('[DEBUG] Emitting pixel_update...');
